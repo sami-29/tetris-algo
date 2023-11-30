@@ -12,9 +12,9 @@ class TetrisSolver:
         'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
     }
 
-    max_attempts = 1000
 
-    def __init__(self, board, sequence, goal):
+
+    def __init__(self, board, sequence, goal, max_attempts=3000):
         self.board = np.array(board)
         self.initial_board = np.array(board)
         self.height = len(board)
@@ -24,6 +24,7 @@ class TetrisSolver:
         self.stack = []
         self.failed_attempts = 0
         self.goal = goal
+        self.max_attempts = max_attempts
 
     def reset(self):
         self.board = np.copy(self.initial_board)
@@ -88,11 +89,9 @@ class TetrisSolver:
     def evaluate_columns(self, tetromino):
         columns_to_try = list(range(self.width - len(tetromino[0]) + 1))
         columns_to_try.sort(key=lambda col: -self.calculate_placement_height(tetromino, col))
-
         return columns_to_try[0]
 
     def calculate_placement_height(self, tetromino, col):
-
         shape = np.array(tetromino)
         rows, cols = shape.shape
 
@@ -180,7 +179,6 @@ class TetrisSolver:
         self.board = np.zeros((self.height, self.width), dtype=int)
         return lines_cleared
 
-# Example usage:
 if __name__ == '__main__' :
     from time import time
     from TetrisGameGenerator import TetrisGameGenerator
@@ -190,8 +188,8 @@ if __name__ == '__main__' :
     width = 10
 
     seed = 5
-    goal = 10
-    tetrominoes = 40
+    goal = 5
+    tetrominoes = 20
 
     game = TetrisGameGenerator(height=height, width=width, seed=seed, goal=goal, tetrominoes=tetrominoes)
     board = game.board

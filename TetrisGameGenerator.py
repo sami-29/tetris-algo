@@ -11,7 +11,7 @@ class TetrisGameGenerator:
         'T': [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
         'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
     }
-    def __init__(self, height=20, width=10, seed=None, goal=40, tetrominoes=100, initial_height_max=7):
+    def __init__(self, height=20, width=10, seed=None, goal=15, tetrominoes=40, initial_height_max=7):
         self.height = height
         self.width = width
         self.seed = seed
