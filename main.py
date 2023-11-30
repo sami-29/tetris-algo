@@ -1,20 +1,29 @@
 from TetrisSolver import TetrisSolver
 from TetrisGameGenerator import TetrisGameGenerator
-
-
+from time import time
+import cProfile
 
 games = []
 winnable_games = []
-for i in range(100):
-    games.append(TetrisGameGenerator(seed=i, goal=i+1, tetrominoes= i*2+10))
+for i in range(500):
+    games.append(TetrisGameGenerator(seed=i, goal=5, tetrominoes=30))
+
+# profiler = cProfile.Profile()
+# profiler.enable()
 
 for game in games:
     print(game.sequence)
-    solver = TetrisSolver(game.height, game.width, game.grid, game.sequence)
-    result, moves, failed_attempts = solver.solve(game.goal)
+    now = time()
+    solver = TetrisSolver(game.board, game.sequence, game.goal)
+    result, moves, failed_attempts = solver.solve()
+    print("Moves: ", moves)
+    print("Time: ", time() - now)
     if result:
         winnable_games.append(game)
+        print("Winnable game found")
 
+# profiler.disable()
+# profiler.print_stats(sort='cumulative')
 
 print(len(winnable_games))
 # create a csv file with the winnable games and their seed | max_moves | goal | initial_height_max

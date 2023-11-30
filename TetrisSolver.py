@@ -1,9 +1,8 @@
-
-import logging
-from random import shuffle
+import numpy as np
 from collections import deque
 
-tetromino_shapes = {
+class TetrisSolver:
+    tetromino_shapes = {
         'I': [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
         'J': [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
         'L': [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
@@ -11,119 +10,159 @@ tetromino_shapes = {
         'S': [[[0, 1, 1], [1, 1, 0]], [[1, 0], [1, 1], [0, 1]]],
         'T': [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
         'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
-}
+    }
 
+    max_attempts = 1000
 
-class TetrisSolver:
-    def __init__(self, height, width, board, sequence, goal):
-        self.height = height
-        self.width = width
-        self.board = board
-        self.sequence = sequence
+    def __init__(self, board, sequence, goal):
+        self.board = np.array(board)
+        self.initial_board = np.array(board)
+        self.height = len(board)
+        self.width = len(board[0])
+        self.sequence = deque(sequence)
         self.lines_cleared = 0
         self.stack = []
         self.failed_attempts = 0
         self.goal = goal
 
+    def reset(self):
+        self.board = np.copy(self.initial_board)
+        self.lines_cleared = 0
+        self.stack = []
+        self.failed_attempts = 0
 
     def rotate_tetromino(self, tetromino, rotation):
         return tetromino[rotation % len(tetromino)]
 
     def is_valid_move(self, tetromino, row, col):
-        for i, r in enumerate(tetromino):
-            for j, element in enumerate(r):
-                if element and (
-                        row + i >= self.height or
-                        not (0 <= col + j < self.width) or
-                        self.board[row + i][col + j]
-                ):
+        shape = np.asarray(tetromino)
+        rows, cols = self.get_tetromino_dimensions(shape)
+
+        if (
+            row + rows > self.height or
+            col < 0 or col + cols > self.width
+        ):
+            return False
+
+        for r in range(rows):
+            for c in range(cols):
+                if shape[r][c] == 1 and self.board[row+r][col+c] == 1:
                     return False
 
         return True
 
-    def place_tetromino(self, tetromino, row, col):
+    def get_tetromino_dimensions(self, tetromino):
+        if hasattr(tetromino, 'rows') and hasattr(tetromino, 'cols'):
+            return tetromino.rows, tetromino.cols
 
-        while self.is_valid_move(tetromino, row + 1, col):
+        rows, cols = tetromino.shape
+        return rows, cols
+
+
+    def place_tetromino(self, tetromino, row, col):
+        shape = np.asarray(tetromino)
+        rows, cols = shape.shape
+
+        while row + rows <= self.height and not np.any(np.add(self.board[row:row+rows, col:col+cols], shape) > 1):
             row += 1
 
-        for i in range(len(tetromino)):
-            for j in range(len(tetromino[0])):
-                if tetromino[i][j]:
-                    self.board[row + i][col + j] = 1
-
+        np.add(self.board[row-1:row-1+rows, col:col+cols], shape, out=self.board[row-1:row-1+rows, col:col+cols])
 
         self.clear_lines()
 
     def clear_lines(self):
-        lines_cleared = 0
-        for row in range(self.height):
-            if all(self.board[row]):
-                lines_cleared += 1
-                self.board = [[0]*self.width] + self.board[:row] + self.board[row+1:]
-        self.lines_cleared += lines_cleared
+        full_rows = np.all(self.board, axis=1)
+        self.lines_cleared += np.sum(full_rows)
 
-        self.board += [[0] * self.width] * lines_cleared
-
+        self.board = np.vstack([np.zeros((np.sum(full_rows), self.width), dtype=int), self.board[~full_rows]])
 
     def visualize(self, board=None):
         if board is None:
             board = self.board
 
-        board_str = ''
-        for row in range(self.height):
-            for col in range(self.width):
-                board_str += str(board[row][col]) + ' '
-            board_str += '\n'
-        return board_str
+        return '\n'.join([' '.join(map(str, row)) for row in board])
 
     def is_game_over(self):
         return any(self.board[0][col] == 1 for col in range(self.width))
 
-    def solve(self, current = None):
-        current = current if current else self.sequence.pop(0)
-        shape = tetromino_shapes[current]
+    def evaluate_columns(self, tetromino):
+        columns_to_try = list(range(self.width - len(tetromino[0]) + 1))
+        columns_to_try.sort(key=lambda col: -self.calculate_placement_height(tetromino, col))
 
-        for rotation in range(len(current)):
-            for col in range(self.width):
-                boardcopy = [row[:] for row in self.board]
-                print("Current:", current, "Rotation:", rotation, "Col:", col)
+        return columns_to_try[0]
+
+    def calculate_placement_height(self, tetromino, col):
+
+        shape = np.array(tetromino)
+        rows, cols = shape.shape
+
+        height = 0
+        while height + rows <= self.height and not np.any(self.board[height:height+rows, col:col+cols] + shape > 1):
+            height += 1
+
+        return height
+
+
+    def solve(self, current=None):
+        current = current if current else self.sequence.popleft()
+        shape = self.tetromino_shapes[current]
+
+        for rotation in range(len(shape)):
+            columns_to_try = list(range(self.width - len(shape[0]) + 1))
+
+            for _ in columns_to_try:
+                if self.failed_attempts >= self.max_attempts:
+                    return False, self.stack, self.failed_attempts
+                boardcopy = np.copy(self.board)
+                col = self.evaluate_columns(shape[rotation])
+
                 current_iteration_lines_cleared = self.lines_cleared
                 if self.is_valid_move(shape[rotation], 0, col):
                     self.place_tetromino(shape[rotation], 0, col)
-
-                    print("Board after placing tetromino:")
-                    print("Lines cleared:", self.lines_cleared)
-                    print(self.visualize())
                 else:
-                    continue
-
-                if self.is_game_over():
-                    self.board = boardcopy
                     self.failed_attempts += 1
                     continue
-                elif self.lines_cleared >= self.goal:
+
+                if self.lines_cleared >= self.goal:
                     self.stack.append((current, rotation, col))
                     return True, self.stack, self.failed_attempts
                 elif self.sequence:
                     self.stack.append((current, rotation, col))
-                    next_tetromino = self.sequence.pop(0)
+                    next_tetromino = self.sequence.popleft()
                     result, stack, attempts = self.solve(next_tetromino)
                     if result:
-                        return True, stack, attempts  # Propagate the success
-                    # If the current sequence didn't lead to success, backtrack
-                    self.sequence.insert(0, next_tetromino)
+                        return True, stack, attempts
+                    self.sequence.appendleft(next_tetromino)
                     self.stack.pop()
-                    self.board = boardcopy
+                    self.lines_cleared = current_iteration_lines_cleared
+                    self.board = np.copy(boardcopy)
+
                 else:
-                    self.board = boardcopy
+                    self.board = np.copy(boardcopy)
                     self.lines_cleared = current_iteration_lines_cleared
                     self.failed_attempts += 1
-                if(rotation == len(current) - 1 and col == self.width - 1):
-                    self.stack.pop()
-                    self.sequence.insert(0, current)
 
+                if(rotation == len(current) - 1 and col == self.width - len(shape[rotation][0])):
+                    self.failed_attempts += 1
+                    self.board = np.copy(boardcopy)
+                    self.lines_cleared = current_iteration_lines_cleared
 
         return False, self.stack, self.failed_attempts
+
+    def visualize_moves(self, stack):
+        self.reset()
+        for tetromino, rotation, col in stack:
+            initial_lines_cleared = self.lines_cleared
+            self.place_tetromino(self.tetromino_shapes[tetromino][rotation], 0, col)
+            print("Tetromino: ", tetromino, " Rotation: ", rotation, " Column: ", col)
+            print("Lines cleared: ", self.lines_cleared - initial_lines_cleared)
+            print(self.visualize())
+            print()
+
+
+
+    def evaluate_board(self, board):
+        return np.sum(board)
 
     def test(self, tetrominoes, positions):
         positions = deque(positions)
@@ -133,36 +172,53 @@ class TetrisSolver:
             self.place_tetromino(tetromino, 0, col)
             if(self.is_game_over()):
                 return False
-            board = self.board.copy()
+            board = np.copy(self.board)
             self.visualize(board)
 
         lines_cleared = self.lines_cleared
         self.lines_cleared = 0
-        self.board = [[0] * self.width for _ in range(self.height)]
+        self.board = np.zeros((self.height, self.width), dtype=int)
         return lines_cleared
 
-
 # Example usage:
-height, width = 20, 10
-goal_lines = 1
-max_moves = 20
+if __name__ == '__main__' :
+    from time import time
+    from TetrisGameGenerator import TetrisGameGenerator
+    import cProfile
 
-board = [[0] * width for _ in range(height)]
+    height = 20
+    width = 10
+
+    seed = 5
+    goal = 10
+    tetrominoes = 40
+
+    game = TetrisGameGenerator(height=height, width=width, seed=seed, goal=goal, tetrominoes=tetrominoes)
+    board = game.board
+    sequence = game.sequence
 
 
-sequence = ['I','I','I','I']
 
-print("Sequence:", sequence)
+    solver = TetrisSolver(board, sequence, goal)
 
-logging.basicConfig(level=logging.INFO)
-solver = TetrisSolver(height, width, board, sequence, goal_lines)
+    print(solver.visualize())
 
-result, moves, failed_attempts = solver.solve()
+    profiler = cProfile.Profile()
+    profiler.enable()
 
-print("Result:", result)
-print("Moves:", moves)
-print("Failed attempts:", failed_attempts)
-print("Lines cleared:", solver.lines_cleared)
+    start = time()
+    result, stack, failed_attempts = solver.solve()
+    end = time()
 
+    profiler.disable()
+    profiler.print_stats(sort='cumulative')
+
+    print(game.sequence)
+    print('Time taken: ', end - start)
+    print('Result: ', result)
+    print('Stack: ', stack)
+    print('Failed attempts: ', failed_attempts)
+
+    solver.visualize_moves(stack)
 
 
