@@ -14,7 +14,7 @@ class TetrisSolver:
 
 
 
-    def __init__(self, board, sequence, goal, max_attempts=3000):
+    def __init__(self, board, sequence, goal, max_attempts=100000):
         self.board = np.array(board)
         self.initial_board = np.array(board)
         self.height = len(board)
@@ -25,6 +25,8 @@ class TetrisSolver:
         self.failed_attempts = 0
         self.goal = goal
         self.max_attempts = max_attempts
+
+        self.additional_max_attempts = True
 
     def reset(self):
         self.board = np.copy(self.initial_board)
@@ -111,6 +113,11 @@ class TetrisSolver:
 
             for _ in columns_to_try:
                 if self.failed_attempts >= self.max_attempts:
+                    if self.additional_max_attempts and self.goal - self.lines_cleared <= 2:
+                        self.max_attempts += self.max_attempts
+                        self.additional_max_attempts = False
+                        continue
+
                     return False, self.stack, self.failed_attempts
                 boardcopy = np.copy(self.board)
                 col = self.evaluate_columns(shape[rotation])
@@ -122,9 +129,16 @@ class TetrisSolver:
                     self.failed_attempts += 1
                     continue
 
-                if self.lines_cleared >= self.goal:
+                if self.is_game_over():
+                    self.board = np.copy(boardcopy)
+                    self.lines_cleared = current_iteration_lines_cleared
+                    self.failed_attempts += 1
+                    continue
+
+                elif self.lines_cleared >= self.goal:
                     self.stack.append((current, rotation, col))
                     return True, self.stack, self.failed_attempts
+
                 elif self.sequence:
                     self.stack.append((current, rotation, col))
                     next_tetromino = self.sequence.popleft()
@@ -187,9 +201,9 @@ if __name__ == '__main__' :
     height = 20
     width = 10
 
-    seed = 5
+    seed = 1
     goal = 5
-    tetrominoes = 20
+    tetrominoes = 30
 
     game = TetrisGameGenerator(height=height, width=width, seed=seed, goal=goal, tetrominoes=tetrominoes)
     board = game.board

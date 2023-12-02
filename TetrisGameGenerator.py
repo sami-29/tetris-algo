@@ -79,7 +79,6 @@ class TetrisGameGenerator:
 
 
     def fill_grid(self):
-        # Fill the grid with random tetrominoes in random positions that don't go over the initial height for columns choose the ones with the lowest height using the evaluate_columns function
         for _ in range(40):
             tetromino = random.choice(self.tetrominoes_names)
             rotation = random.randint(0, len(self.tetromino_shapes[tetromino]) - 1)
@@ -102,13 +101,11 @@ class TetrisGameGenerator:
             bag = tetromino_names.copy()
             random.shuffle(bag)
 
-            # Check for snake sequences and reshuffle if needed
             while any(bag[i] == bag[i + 1] in ['S', 'Z'] for i in range(bag_size - 1)):
                 random.shuffle(bag)
 
             bags.append(bag)
 
-            # Check if we have enough tetrominoes in the sequence
             if len(bags) * bag_size >= max_moves:
                 sequence = [tetromino for bag in bags for tetromino in bag]
                 return sequence[:max_moves] if max_moves else sequence
