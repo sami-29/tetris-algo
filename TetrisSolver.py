@@ -96,7 +96,7 @@ class TetrisSolver:
 
         columns_to_try = list(range(self.width - len(tetromino[0]) + 1))
         columns_to_try.sort(key=lambda col: -self.calculate_placement_height(tetromino, col))
-        return columns_to_try[0]
+        return columns_to_try
 
     def calculate_placement_height(self, tetromino, col):
         shape = np.array(tetromino)
@@ -114,14 +114,14 @@ class TetrisSolver:
         shape = self.tetromino_shapes[current]
 
         for rotation in range(len(shape)):
-            columns_to_try = list(range(self.width - len(shape[0]) + 1))
+            columns_to_try = self.evaluate_columns(shape[rotation])
+            print(columns_to_try)
 
-            for _ in columns_to_try:
+            for col in columns_to_try:
                 if self.failed_attempts >= self.max_attempts:
 
                     return False, self.stack, self.failed_attempts
                 boardcopy = np.copy(self.board)
-                col = self.evaluate_columns(shape[rotation])
 
                 current_iteration_lines_cleared = self.lines_cleared
                 if self.is_valid_move(shape[rotation], 0, col):
@@ -183,15 +183,15 @@ if __name__ == '__main__' :
     height = 20
     width = 10
 
-    seed = 682
+    seed = 0
     goal = 10
     tetrominoes = 50
+    initial_height_max = 7
 
-    game = TetrisGameGenerator(height=height, width=width, seed=seed, goal=goal, tetrominoes=tetrominoes)
+    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+
     board = game.board
     sequence = game.sequence
-
-
 
     solver = TetrisSolver(board, sequence, goal)
 
@@ -207,7 +207,7 @@ if __name__ == '__main__' :
     profiler.disable()
     profiler.print_stats(sort='cumulative')
 
-    print(game.sequence)
+    print(sequence)
     print('Time taken: ', end - start)
     print('Result: ', result)
     print('Stack: ', stack)

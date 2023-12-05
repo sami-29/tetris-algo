@@ -26,32 +26,20 @@ def generate_game(args):
     game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes,initial_height_max= initial_height_max)
     return game
 
-def get_max_attempts_from_csv(goal, tetrominoes, initial_height_max):
-    try:
-        with open('best_max_attempts.csv', 'r') as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip header row
-            for row in reader:
-                if int(row[1]) == goal and int(row[2]) == tetrominoes and int(row[3]) == initial_height_max:
-                    return int(row[4])
-    except FileNotFoundError:
-        pass
-    return None
-
 
 if __name__ == "__main__":
     winnable_games = []
     attempts = []
     games = []
-    goal = 5
-    tetrominoes = 25
+    goal = 15
+    tetrominoes = 60
     initial_height_max = 7
     num_processes = multiprocessing.cpu_count()
     print(f"Number of processes: {num_processes}")
     test_games_to_generate = 0
-    games_to_generate = 100000
+    games_to_generate = 1000
 
-    max_attempts = 100
+    max_attempts = 10000
     start_loop = time()
 
     # start_minimization = time()
@@ -71,7 +59,7 @@ if __name__ == "__main__":
 
     start_game_generation = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
-        games += pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(test_games_to_generate, games_to_generate)])
+        games += pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(0, games_to_generate)])
 
     end_game_generation = time()
     print(f"Time to generate games: {end_game_generation - start_game_generation}")
