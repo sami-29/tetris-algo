@@ -9,3 +9,11 @@ The average time per winnable game for 10/50 goal/tetrominoes was 40.24871492385
 The average time per winnable game for 10/50 goal/tetrominoes was 59.90359558377947 seconds. 7 games were winnable. It took 419.3251690864563 seconds to pass through all 100000 seeds.
 The average time per winnable game for 10/50 goal/tetrominoes was 271.8365278840065 seconds. 4 games were winnable. It took 1087.346111536026 seconds to pass through all 50000 seeds.
 The average time per winnable game for 10/50 goal/tetrominoes was 79.92135522996678 seconds. 68 games were winnable. It took 5434.652155637741 seconds to pass through all 1000000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 157.25614916836773 seconds. 27 games were winnable. It took 4245.916027545929 seconds to pass through all 1000000 seeds. with a max_attempts of 0.
+The average time per winnable game for 10/50 goal/tetrominoes was 30.313531017303468 seconds. 5 games were winnable. It took 151.56765508651733 seconds to pass through all 1000 seeds. with a max_attempts of 10000.
+The average time per winnable game for 10/50 goal/tetrominoes was 17.137405039282406 seconds. 85 games were winnable. It took 1456.6794283390045 seconds to pass through all 10000 seeds. with a max_attempts of 10000.
+The average time per winnable game for 15/60 goal/tetrominoes was 491.5285470485687 seconds. 3 games were winnable. It took 1474.5856411457062 seconds to pass through all 10000 seeds. with a max_attempts of 10000.
+The average time per winnable game for 8/40 goal/tetrominoes was 4.042119383811951 seconds. 46 games were winnable. It took 185.93749165534973 seconds to pass through all 10000 seeds. with a max_attempts of 1000.
+The average time per winnable game for 8/40 goal/tetrominoes was 53.95058590173721 seconds. 4 games were winnable. It took 215.80234360694885 seconds to pass through all 10000 seeds. with a max_attempts of 1.
+The average time per winnable game for 8/40 goal/tetrominoes was 8.752086921171708 seconds. 209 games were winnable. It took 1829.186166524887 seconds to pass through all 500000 seeds. with a max_attempts of 1.
+The average time per winnable game for 10/50 goal/tetrominoes was 39.40685776508216 seconds. 33 games were winnable. It took 1300.4263062477112 seconds to pass through all 1000 seeds. with a max_attempts of 100000.

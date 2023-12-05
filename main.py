@@ -13,13 +13,6 @@ def solve_game(args):
 
     # write to attempts.csv if test is True
 
-    with open('attempts.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        # write header
-        if test:
-            writer.writerow(["seed", "tetrominoes", "goal", "initial_height_max", "max_moves", "failed_attempts", "solvable"])
-        writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max, max_moves, failed_attempts, result])
-
     if(test):
         return {
                 "solvable": result,
@@ -57,33 +50,25 @@ if __name__ == "__main__":
     num_processes = multiprocessing.cpu_count()
     print(f"Number of processes: {num_processes}")
     test_games_to_generate = 0
-    games_to_generate = 1000000
+    games_to_generate = 50000
 
-
+    max_attempts = 5000
     start_loop = time()
 
-    start_minimization = time()
+    # start_minimization = time()
 
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(0, test_games_to_generate)])
+    # with multiprocessing.Pool(processes=num_processes) as pool:
+    #     games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(0, test_games_to_generate)])
 
-    max_attempts = get_max_attempts_from_csv(goal, tetrominoes, initial_height_max)
+    # start_minimization = time()
 
-    if max_attempts is None:
-        max_attempts = 100
-        start_minimization = time()
+    # with multiprocessing.Pool(processes=num_processes) as pool:
+    #     attempts = pool.map(solve_game, [(game, max_attempts, True) for game in games])
 
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            attempts = pool.map(solve_game, [(game, max_attempts, True) for game in games])
+    # max_attempts = minimize_max_attempts(attempts)
+    # print(f"Best max_attempts: {max_attempts}")
+    # print(f"Time to minimize max_attempts: {time() - start_minimization}")
 
-        max_attempts = minimize_max_attempts(attempts)
-        print(f"Best max_attempts: {max_attempts}")
-        print(f"Time to minimize max_attempts: {time() - start_minimization}")
-
-        # Save the max_attempts in best_max_attempts.csv
-        with open('best_max_attempts.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([goal, tetrominoes, initial_height_max, max_attempts])
 
     start_game_generation = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
@@ -95,7 +80,7 @@ if __name__ == "__main__":
 
     start_game_solving = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
-        winnable_games = pool.map(solve_game, [(game, 1, False) for game in games])
+        winnable_games = pool.map(solve_game, [(game, max_attempts, False) for game in games])
     winnable_games = [game for game in winnable_games if game is not None]
     end_game_solving = time()
     print(f"Time to solve games: {end_game_solving - start_game_solving}")

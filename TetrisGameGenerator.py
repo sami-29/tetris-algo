@@ -19,7 +19,6 @@ class TetrisGameGenerator:
         self.tetrominoes = tetrominoes
         self.initial_height_max = initial_height_max
         self.board = np.zeros((self.height, self.width), dtype=int)
-        self.winnable = False
         self.tetrominoes_names = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
 
         self.density = 9
