@@ -11,7 +11,6 @@ def solve_game(args):
 
     result, moves, failed_attempts = solver.solve()
 
-    # write to attempts.csv if test is True
 
     if(test):
         return {
@@ -44,15 +43,15 @@ if __name__ == "__main__":
     winnable_games = []
     attempts = []
     games = []
-    goal = 10
-    tetrominoes = 50
+    goal = 5
+    tetrominoes = 25
     initial_height_max = 7
     num_processes = multiprocessing.cpu_count()
     print(f"Number of processes: {num_processes}")
     test_games_to_generate = 0
-    games_to_generate = 50000
+    games_to_generate = 100000
 
-    max_attempts = 5000
+    max_attempts = 100
     start_loop = time()
 
     # start_minimization = time()
