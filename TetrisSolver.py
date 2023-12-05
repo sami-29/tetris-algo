@@ -26,7 +26,6 @@ class TetrisSolver:
         self.goal = goal
         self.max_attempts = max_attempts
 
-        self.additional_max_attempts = True
 
     def reset(self):
         self.board = np.copy(self.initial_board)
@@ -89,6 +88,12 @@ class TetrisSolver:
         return any(self.board[0][col] == 1 for col in range(self.width))
 
     def evaluate_columns(self, tetromino):
+        # before evaluating the columns check if the tetromino can be placed at all meaning that at row there must not be any 1s
+
+        if np.any(tetromino[0] == 1):
+            return 0
+
+
         columns_to_try = list(range(self.width - len(tetromino[0]) + 1))
         columns_to_try.sort(key=lambda col: -self.calculate_placement_height(tetromino, col))
         return columns_to_try[0]
@@ -113,10 +118,6 @@ class TetrisSolver:
 
             for _ in columns_to_try:
                 if self.failed_attempts >= self.max_attempts:
-                    if self.additional_max_attempts and self.goal - self.lines_cleared <= 2:
-                        self.max_attempts += self.max_attempts
-                        self.additional_max_attempts = False
-                        continue
 
                     return False, self.stack, self.failed_attempts
                 boardcopy = np.copy(self.board)
@@ -174,25 +175,6 @@ class TetrisSolver:
 
 
 
-    def evaluate_board(self, board):
-        return np.sum(board)
-
-    def test(self, tetrominoes, positions):
-        positions = deque(positions)
-        for tetromino in tetrominoes:
-            col = positions.popleft()
-
-            self.place_tetromino(tetromino, 0, col)
-            if(self.is_game_over()):
-                return False
-            board = np.copy(self.board)
-            self.visualize(board)
-
-        lines_cleared = self.lines_cleared
-        self.lines_cleared = 0
-        self.board = np.zeros((self.height, self.width), dtype=int)
-        return lines_cleared
-
 if __name__ == '__main__' :
     from time import time
     from TetrisGameGenerator import TetrisGameGenerator
@@ -201,9 +183,9 @@ if __name__ == '__main__' :
     height = 20
     width = 10
 
-    seed = 1
-    goal = 5
-    tetrominoes = 30
+    seed = 682
+    goal = 10
+    tetrominoes = 50
 
     game = TetrisGameGenerator(height=height, width=width, seed=seed, goal=goal, tetrominoes=tetrominoes)
     board = game.board
@@ -230,6 +212,7 @@ if __name__ == '__main__' :
     print('Result: ', result)
     print('Stack: ', stack)
     print('Failed attempts: ', failed_attempts)
+    print('Lines cleared: ', solver.lines_cleared)
 
     solver.visualize_moves(stack)
 
