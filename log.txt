@@ -1,0 +1,11 @@
+The average time per winnable game for 3/20 goal/tetrominoes was 1.3771563860086293 seconds. 26 games were winnable. It took 35.806066036224365 seconds to solve all 100 games.
+The average time per winnable game for 3/20 goal/tetrominoes was 0.1893805585256437 seconds. 82 games were winnable. It took 15.529205799102783 seconds to pass through all 1000 seeds.
+The average time per winnable game for 3/20 goal/tetrominoes was 0.1818632498020079 seconds. 82 games were winnable. It took 14.912786483764648 seconds to pass through all 1000 seeds.
+The average time per winnable game for 3/20 goal/tetrominoes was 0.17603366141113938 seconds. 836 games were winnable. It took 147.16414093971252 seconds to pass through all 10000 seeds.
+The average time per winnable game for 3/20 goal/tetrominoes was 0.04082202255440671 seconds. 836 games were winnable. It took 34.12721085548401 seconds to pass through all 10000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 73.5083863394601 seconds. 7 games were winnable. It took 514.5587043762207 seconds to pass through all 100000 seeds.
+The average time per winnable game for 3/20 goal/tetrominoes was 0.03472803033390373 seconds. 8663 games were winnable. It took 300.84892678260803 seconds to pass through all 100000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 40.24871492385864 seconds. 1 games were winnable. It took 40.24871492385864 seconds to pass through all 10000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 59.90359558377947 seconds. 7 games were winnable. It took 419.3251690864563 seconds to pass through all 100000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 271.8365278840065 seconds. 4 games were winnable. It took 1087.346111536026 seconds to pass through all 50000 seeds.
+The average time per winnable game for 10/50 goal/tetrominoes was 79.92135522996678 seconds. 68 games were winnable. It took 5434.652155637741 seconds to pass through all 1000000 seeds.
