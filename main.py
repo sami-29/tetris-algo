@@ -36,7 +36,7 @@ if __name__ == "__main__":
     tetrominoes = 40
     initial_height_max = 4
     start = 0
-    end = 10000
+    end = 100
     max_attempts = 1000
     # =====================
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     # Create a CSV file with the winnable games and their seed | max_moves | goal | initial_height_max
     if(len(winnable_games) > 0):
-        with open('winnable_games.csv', 'w', newline='') as file:
+        with open('winnable_games.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
             for game in winnable_games:
