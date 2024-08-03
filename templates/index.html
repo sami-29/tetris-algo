@@ -383,14 +383,14 @@
                 gameInfoDiv.html('');
                 gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
                 gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-                gameInfoDiv.append('p').text(`Lines Cleared: 0/${data.goal}`);
+                gameInfoDiv.append('p').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
                 tetrisVis.setBoard(data.initialBoard);
                 tetrisVis.setMoves(data.moves);
                 tetrisVis.setSequence(data.sequence);
-                tetrisVis.setGoal(data.goal);
+                tetrisVis.setGoal(parseInt(data.goal));
 
                 // Update sequence display
                 const sequenceContainer = d3.select('#sequence-display').select('div');

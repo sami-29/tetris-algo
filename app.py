@@ -47,7 +47,8 @@ def run_single_game():
         'moves': moves,
         'failedAttempts': failed_attempts,
         'initialBoard': game.board.tolist(),
-        'sequence': game.sequence
+        'sequence': game.sequence,
+        'goal': goal
     })
 
 @app.route('/generate_initial_board', methods=['POST'])
