@@ -44,7 +44,7 @@
 
         <h2>Sequence</h2>
         <div v-if="sequence">
-            {{ sequence.join(', ') }}
+            {% raw %}{{ sequence.join(', ') }}{% endraw %}
         </div>
 
         <h2>Solve Game</h2>

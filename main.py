@@ -69,7 +69,7 @@ def save_winnable_games(winnable_games):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', sequence=None)
 
 @app.route('/generate', methods=['POST'])
 def generate_game_route():
