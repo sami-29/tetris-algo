@@ -5,14 +5,14 @@ from typing import List, Tuple, Dict
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class TetrisGameGenerator:
-    tetromino_shapes: Dict[str, List[np.ndarray]] = {
-        'I': [np.array([[1, 1, 1, 1]]), np.array([[1], [1], [1], [1]])],
-        'J': [np.array([[1, 0, 0], [1, 1, 1]]), np.array([[1, 1], [1, 0], [1, 0]]), np.array([[1, 1, 1], [0, 0, 1]]), np.array([[0, 1], [0, 1], [1, 1]])],
-        'L': [np.array([[0, 0, 1], [1, 1, 1]]), np.array([[1, 0], [1, 0], [1, 1]]), np.array([[1, 1, 1], [1, 0, 0]]), np.array([[1, 1], [0, 1], [0, 1]])],
-        'O': [np.array([[1, 1], [1, 1]])],
-        'S': [np.array([[0, 1, 1], [1, 1, 0]]), np.array([[1, 0], [1, 1], [0, 1]])],
-        'T': [np.array([[0, 1, 0], [1, 1, 1]]), np.array([[1, 0], [1, 1], [1, 0]]), np.array([[1, 1, 1], [0, 1, 0]]), np.array([[0, 1], [1, 1], [0, 1]])],
-        'Z': [np.array([[1, 1, 0], [0, 1, 1]]), np.array([[0, 1], [1, 1], [1, 0]])]
+    tetromino_shapes: Dict[str, List[List[List[int]]]] = {
+        'I': [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
+        'J': [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
+        'L': [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
+        'O': [[[1, 1], [1, 1]]],
+        'S': [[[0, 1, 1], [1, 1, 0]], [[1, 0], [1, 1], [0, 1]]],
+        'T': [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
+        'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
     }
     tetrominoes_names: List[str] = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
 
@@ -30,8 +30,10 @@ class TetrisGameGenerator:
         self.sequence = self.generate_tetromino_sequence(self.tetrominoes)
 
     @staticmethod
-    def rotate_tetromino(tetromino: np.ndarray, rotation: int) -> np.ndarray:
-        return np.rot90(tetromino, k=-rotation)
+    def rotate_tetromino(tetromino: List[List[int]], rotation: int) -> List[List[int]]:
+        for _ in range(rotation % 4):
+            tetromino = list(zip(*tetromino[::-1]))
+        return [list(row) for row in tetromino]
 
     def is_valid_move(self, tetromino: np.ndarray, row: int, col: int) -> bool:
         shape = tetromino
@@ -100,12 +102,15 @@ class TetrisGameGenerator:
 
     def place_tetromino(self, tetromino: str, rotation: int, col: int) -> None:
         shape = self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation)
-        rows, cols = shape.shape
+        rows, cols = len(shape), len(shape[0])
         row = 0
-        while row + rows <= self.height and not np.any(np.logical_and(shape == 1, self.board[row:row+rows, col:col+cols] == 1)):
+        while row + rows <= self.height and not any(shape[r][c] == 1 and self.board[row+r][col+c] == 1 for r in range(rows) for c in range(cols)):
             row += 1
         row -= 1
-        self.board[row:row+rows, col:col+cols] = np.logical_or(self.board[row:row+rows, col:col+cols], shape)
+        for r in range(rows):
+            for c in range(cols):
+                if shape[r][c] == 1:
+                    self.board[row+r][col+c] = 1
         self.clear_lines()
 
 def generate_board_and_sequence(seed: int, tetrominoes: int, initial_height_max: int, goal: int = 0) -> Tuple[np.ndarray, List[str]]:
