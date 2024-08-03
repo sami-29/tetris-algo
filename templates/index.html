@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Game Generator and Solver</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(10, 20px);
+            gap: 1px;
+        }
+        .cell {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+        }
+        .filled {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Tetris Game Generator and Solver</h1>
+        
+        <h2>Generate Game</h2>
+        <div>
+            <label>Seed: <input v-model.number="seed" type="number"></label>
+            <label>Goal: <input v-model.number="goal" type="number"></label>
+            <label>Tetrominoes: <input v-model.number="tetrominoes" type="number"></label>
+            <label>Initial Height Max: <input v-model.number="initial_height_max" type="number"></label>
+            <button @click="generateGame">Generate Game</button>
+        </div>
+
+        <h2>Game Board</h2>
+        <div class="board" v-if="board">
+            <div v-for="row in board" class="row">
+                <div v-for="cell in row" class="cell" :class="{ filled: cell === 1 }"></div>
+            </div>
+        </div>
+
+        <h2>Sequence</h2>
+        <div v-if="sequence">
+            {{ sequence.join(', ') }}
+        </div>
+
+        <h2>Solve Game</h2>
+        <div>
+            <label>Max Attempts: <input v-model.number="max_attempts" type="number"></label>
+            <button @click="solveGame">Solve Game</button>
+        </div>
+
+        <h2>Solution</h2>
+        <div v-if="solution">
+            <p>Result: {{ solution.result ? 'Solved' : 'Not Solved' }}</p>
+            <p>Moves: {{ solution.moves.join(', ') }}</p>
+            <p>Failed Attempts: {{ solution.failed_attempts }}</p>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                seed: 1,
+                goal: 10,
+                tetrominoes: 40,
+                initial_height_max: 7,
+                max_attempts: 10000,
+                board: null,
+                sequence: null,
+                solution: null
+            },
+            methods: {
+                generateGame() {
+                    axios.post('/generate', {
+                        seed: this.seed,
+                        goal: this.goal,
+                        tetrominoes: this.tetrominoes,
+                        initial_height_max: this.initial_height_max
+                    }).then(response => {
+                        this.board = response.data.board;
+                        this.sequence = response.data.sequence;
+                    });
+                },
+                solveGame() {
+                    axios.post('/solve', {
+                        board: this.board,
+                        sequence: this.sequence,
+                        goal: this.goal,
+                        max_attempts: this.max_attempts
+                    }).then(response => {
+                        this.solution = response.data;
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

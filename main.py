@@ -4,8 +4,11 @@ from time import time
 import multiprocessing
 import csv
 import logging
+from flask import Flask, render_template, request, jsonify
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+app = Flask(__name__)
 
 def solve_game(args):
     game, max_moves = args
@@ -64,14 +67,41 @@ def save_winnable_games(winnable_games):
             for game in winnable_games:
                 writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
 
-if __name__ == "__main__":
-    # MODIFIABLE PARAMETERS
-    goal = 8
-    tetrominoes = 40
-    initial_height_max = 4
-    start = 0
-    end = 50
-    max_attempts = 10000
-    # =====================
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-    winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
+@app.route('/generate', methods=['POST'])
+def generate_game_route():
+    data = request.json
+    seed = int(data['seed'])
+    goal = int(data['goal'])
+    tetrominoes = int(data['tetrominoes'])
+    initial_height_max = int(data['initial_height_max'])
+
+    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+    
+    return jsonify({
+        'board': game.board.tolist(),
+        'sequence': game.sequence
+    })
+
+@app.route('/solve', methods=['POST'])
+def solve_game_route():
+    data = request.json
+    board = data['board']
+    sequence = data['sequence']
+    goal = int(data['goal'])
+    max_attempts = int(data['max_attempts'])
+
+    solver = TetrisSolver(board, sequence, goal, max_attempts=max_attempts)
+    result, moves, failed_attempts = solver.solve()
+
+    return jsonify({
+        'result': result,
+        'moves': moves,
+        'failed_attempts': failed_attempts
+    })
+
+if __name__ == "__main__":
+    app.run(debug=True)
