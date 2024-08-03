@@ -76,7 +76,7 @@ if __name__ == "__main__":
     tetrominoes = 40
     initial_height_max = 4
     start = 0
-    end = 100
+    end = 10000
     max_attempts = 10000
     # =====================
 
