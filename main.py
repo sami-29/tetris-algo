@@ -1,10 +1,4 @@
-from TetrisSolver import TetrisSolver
-from TetrisGameGenerator import TetrisGameGenerator
-from time import time
-import multiprocessing
-import csv
-import logging
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, jsonify
 from TetrisSolver import TetrisSolver
 from TetrisGameGenerator import TetrisGameGenerator
 from time import time
@@ -95,6 +89,25 @@ def process_games():
         download_name='winnable_games.csv'
     )
 
+@app.route('/simulate', methods=['POST'])
+def simulate():
+    seed = int(request.form['seed'])
+    goal = int(request.form['goal'])
+    tetrominoes = int(request.form['tetrominoes'])
+    initial_height_max = int(request.form['initial_height_max'])
+    max_attempts = int(request.form['max_attempts'])
+
+    game = generate_game((seed, goal, tetrominoes, initial_height_max))
+    solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_attempts)
+    result, moves, failed_attempts = solver.solve()
+
+    return jsonify({
+        'result': result,
+        'moves': moves,
+        'failed_attempts': failed_attempts,
+        'board': game.visualize_board(),
+        'sequence': game.sequence
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
