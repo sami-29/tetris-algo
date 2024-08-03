@@ -37,7 +37,13 @@
             width: 100%;
         }
 
-        button {
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
             background-color: #003300;
             color: #0f0;
             border: 2px solid #0f0;
@@ -45,14 +51,20 @@
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
             transition: all 0.3s ease;
+            margin: 0 5px;
         }
 
-        button:hover:not([disabled]) {
+        .tab-button:hover:not([disabled]) {
             background-color: #004d00;
             box-shadow: 0 0 5px #0f0;
         }
 
-        button[disabled] {
+        .tab-button.active {
+            background-color: #006600;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .tab-button[disabled] {
             opacity: 0.5;
             cursor: not-allowed;
         }
@@ -143,9 +155,9 @@
     <div class="container">
         <h1>Tetris Solver</h1>
 
-        <div style="width: 100%; text-align: center; margin-bottom: 20px;">
-            <button @click="tab = 'simulation'" :class="{ 'active': tab === 'simulation' }">Simulation</button>
-            <button @click="tab = 'single-game'" :class="{ 'active': tab === 'single-game' }">Single Game</button>
+        <div class="tab-buttons">
+            <button @click="setTab('simulation')" :class="{ 'tab-button': true, 'active': tab === 'simulation' }">Simulation</button>
+            <button @click="setTab('single-game')" :class="{ 'tab-button': true, 'active': tab === 'single-game' }">Single Game</button>
         </div>
 
         <div x-show="tab === 'simulation'" class="tab-content" :class="{ 'active': tab === 'simulation' }">
