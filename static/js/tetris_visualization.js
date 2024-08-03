@@ -239,7 +239,6 @@ class TetrisVisualization {
     }
 
     updateGameInfo() {
-        const gameInfoDiv = d3.select('#game-info');
-        gameInfoDiv.select('p:last-child').text(`Lines Cleared: ${this.linesCleared}/${this.goal}`);
+        d3.select('#lines-cleared').text(`Lines Cleared: ${this.linesCleared}/${this.goal}`);
     }
 }

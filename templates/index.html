@@ -383,7 +383,7 @@
                 gameInfoDiv.html('');
                 gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
                 gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-                gameInfoDiv.append('p').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
+                gameInfoDiv.append('p').attr('id', 'lines-cleared').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
