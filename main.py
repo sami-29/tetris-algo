@@ -69,8 +69,8 @@ if __name__ == "__main__":
     tetrominoes = 40
     initial_height_max = 4
     start = 0
-    end = 10000
-    max_attempts = 10000
+    end = 100
+    max_attempts = 1000
     # =====================
 
     winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
