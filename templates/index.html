@@ -152,6 +152,12 @@
                 resultsDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
                 resultsDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
 
+                // Create a container for the Tetris board
+                const boardContainer = resultsDiv.append('div')
+                    .attr('id', 'tetris-board')
+                    .style('width', '200px')
+                    .style('height', '400px');
+
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
                 tetrisVis.setBoard(data.initialBoard);

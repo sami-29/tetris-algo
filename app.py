@@ -6,6 +6,9 @@ from minimization import minimize_max_attempts
 import multiprocessing
 import json
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 htmx = HTMX(app)
@@ -48,15 +51,20 @@ def run_single_game():
     })
 
 def simulate_games(goal, tetrominoes, initial_height_max, num_games):
+    logging.info(f"Starting simulation with {num_games} games")
     start_time = time.time()
     winnable_games = 0
     total_attempts = 0
 
     with multiprocessing.Pool() as pool:
-        results = pool.starmap(
+        results = []
+        for i, result in enumerate(pool.imap_unordered(
             run_single_simulation,
             [(i, goal, tetrominoes, initial_height_max) for i in range(num_games)]
-        )
+        )):
+            results.append(result)
+            if i % 10 == 0:  # Log progress every 10 games
+                logging.info(f"Processed {i+1}/{num_games} games")
 
     for result, attempts in results:
         if result:
@@ -66,6 +74,8 @@ def simulate_games(goal, tetrominoes, initial_height_max, num_games):
     end_time = time.time()
     total_time = end_time - start_time
     average_time = total_time / num_games
+
+    logging.info(f"Simulation completed. Total time: {total_time:.2f} seconds")
 
     return {
         'winnable_games': winnable_games,
