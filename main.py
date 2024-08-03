@@ -1,59 +1,32 @@
 from TetrisSolver import TetrisSolver
 from TetrisGameGenerator import TetrisGameGenerator
+from minimization import minimize_max_attempts
+from db_operations import init_db
 from time import time
 import multiprocessing
 import csv
-
-def minimize_max_attempts(attempts):
-    size = len(attempts)
-    best_max_attempts = 0
-    best_efficiency_ratio = 0
-    memo = {}
-
-    for i in range(size):
-        current_attempt_key = tuple(attempts[i].items())
-        if current_attempt_key in memo or not attempts[i]["solvable"]:
-            continue
-
-        memo[current_attempt_key] = True
-
-        max_attempts = attempts[i]["failed_attempts"] + 1
-        solved = 0
-        loop = max_attempts * size
-
-        for j in range(max_attempts * size):
-            current_attempt = j // size + 1
-            isSolvable = True if attempts[j % size]["solvable"] and attempts[j % size]["failed_attempts"] + 1 == current_attempt else False
-            solved += 1 if isSolvable else 0
-            loop -= max_attempts - current_attempt if isSolvable else 0
-
-        efficiency_ratio = solved / loop
-        if efficiency_ratio > best_efficiency_ratio:
-            best_efficiency_ratio = efficiency_ratio
-            best_max_attempts = max_attempts
-
-    return best_max_attempts
 
 def solve_game(args):
     game, max_moves, test = args
     solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_moves)
 
     result, moves, failed_attempts = solver.solve()
-    if(test):
+    if test:
         return {
-                "solvable": result,
-                "failed_attempts": failed_attempts
-                }
-
+            "solvable": result,
+            "failed_attempts": failed_attempts
+        }
 
     return game if result else None
 
 def generate_game(args):
     seed, goal, tetrominoes, initial_height_max = args
-    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes,initial_height_max= initial_height_max)
+    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
     return game
 
 if __name__ == "__main__":
+    init_db()  # Initialize the SQLite database
+
     winnable_games = []
     attempts = []
     games = []
@@ -84,7 +57,7 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=num_processes) as pool:
         test_attempts = pool.map(solve_game, [(game, test_max_attempts, True) for game in test_games])
 
-    max_attempts = minimize_max_attempts(test_attempts)
+    max_attempts = minimize_max_attempts(test_attempts, goal, tetrominoes, initial_height_max)
     print(f"Optimal max_attempts found: {max_attempts}")
     print(f"Time to find optimal max_attempts: {time() - start_minimization}")
 
@@ -112,7 +85,7 @@ if __name__ == "__main__":
         file.write(f"The average time per winnable game for {goal}/{tetrominoes} goal/tetrominoes was {(end_loop - start_loop) / len(winnable_games)} seconds. {len(winnable_games)} games were winnable. It took {end_loop - start_loop} seconds to pass through all {len(games)} seeds. with a max_attempts of {max_attempts}.\n")
 
     # Create a CSV file with the winnable games and their seed | max_moves | goal | initial_height_max
-    if(len(winnable_games) > 0):
+    if len(winnable_games) > 0:
         with open('winnable_games.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])

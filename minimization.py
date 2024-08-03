@@ -1,32 +1,34 @@
-def minimize_max_attempts(attempts):
+import numpy as np
+from db_operations import get_cached_max_attempts, cache_max_attempts
+
+def minimize_max_attempts(attempts, goal, tetrominoes, initial_height_max):
+    params = {
+        'goal': goal,
+        'tetrominoes': tetrominoes,
+        'initial_height_max': initial_height_max
+    }
+    
+    cached_result = get_cached_max_attempts(params)
+    if cached_result is not None:
+        return cached_result
+
     size = len(attempts)
+    max_attempts_range = range(1, max(attempt["failed_attempts"] for attempt in attempts) + 2)
+    
     best_max_attempts = 0
-    best_efficiency_ratio = 0
-    memo = {}
+    best_efficiency_score = 0
 
-    for i in range(size):
-        current_attempt_key = tuple(attempts[i].items())
-        if current_attempt_key in memo or not attempts[i]["solvable"]:
-            continue
-
-        memo[current_attempt_key] = True
-
-        max_attempts = attempts[i]["failed_attempts"] + 1
-        solved = 0
-        loop = max_attempts * size
-
-        for j in range(max_attempts * size):
-            current_attempt = j // size + 1
-            isSolvable = True if attempts[j % size]["solvable"] and attempts[j % size]["failed_attempts"] + 1 == current_attempt else False
-            solved += 1 if isSolvable else 0
-            loop -= max_attempts - current_attempt if isSolvable else 0
-
-
-        efficiency_ratio = solved / loop
-        if efficiency_ratio > best_efficiency_ratio:
-            best_efficiency_ratio = efficiency_ratio
+    for max_attempts in max_attempts_range:
+        solved = sum(1 for attempt in attempts if attempt["solvable"] and attempt["failed_attempts"] < max_attempts)
+        total_attempts = sum(min(max_attempts, attempt["failed_attempts"] + 1) for attempt in attempts)
+        
+        efficiency_score = (solved ** 2) / total_attempts
+        
+        if efficiency_score > best_efficiency_score:
+            best_efficiency_score = efficiency_score
             best_max_attempts = max_attempts
 
+    cache_max_attempts(params, best_max_attempts)
     return best_max_attempts
 
 
