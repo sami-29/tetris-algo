@@ -51,9 +51,15 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
     logging.info(f"Number of winnable games: {len(winnable_games)}")
 
     with open('log.txt', 'a') as file:
-        file.write(f"The average time per winnable game for {goal}/{tetrominoes} goal/tetrominoes was {total_time / len(winnable_games):.2f} seconds. "
-                   f"{len(winnable_games)} games were winnable. It took {total_time:.2f} seconds to pass through all {len(games)} seeds. "
-                   f"with a max_attempts of {max_attempts}.\n")
+        if winnable_games:
+            avg_time_per_game = total_time / len(winnable_games)
+            file.write(f"The average time per winnable game for {goal}/{tetrominoes} goal/tetrominoes was {avg_time_per_game:.2f} seconds. "
+                       f"{len(winnable_games)} games were winnable. It took {total_time:.2f} seconds to pass through all {len(games)} seeds "
+                       f"with a max_attempts of {max_attempts}.\n")
+        else:
+            file.write(f"No winnable games found for {goal}/{tetrominoes} goal/tetrominoes. "
+                       f"It took {total_time:.2f} seconds to pass through all {len(games)} seeds "
+                       f"with a max_attempts of {max_attempts}.\n")
 
     if winnable_games:
         with open('winnable_games.csv', 'a', newline='') as file:
