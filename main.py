@@ -80,7 +80,7 @@ def generate_game_route():
     initial_height_max = int(data['initial_height_max'])
 
     game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
-    
+
     return jsonify({
         'board': game.board.tolist(),
         'sequence': game.sequence
