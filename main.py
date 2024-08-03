@@ -82,8 +82,15 @@ def process_games():
 
     # Create a response with the CSV file
     output.seek(0)
+    return jsonify({
+        'message': f'Processing complete. {len(winnable_games)} winnable games found.',
+        'download_url': '/download_csv'
+    })
+
+@app.route('/download_csv')
+def download_csv():
     return send_file(
-        io.BytesIO(output.getvalue().encode()),
+        'winnable_games.csv',
         mimetype='text/csv',
         as_attachment=True,
         download_name='winnable_games.csv'

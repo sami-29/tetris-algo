@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,57 +8,69 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
             line-height: 1.6;
             padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
         }
-
-        h1,
-        h2 {
-            color: #2c3e50;
+        h1, h2 {
+            color: #4fc3f7;
         }
-
-        input,
-        button {
-            background-color: #fff;
-            color: #333;
-            border: 1px solid #ccc;
+        form {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+            border: 1px solid #555;
             padding: 5px;
             margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
         }
-
         button {
             cursor: pointer;
-            background-color: #3498db;
-            color: #fff;
+            background-color: #4fc3f7;
+            color: #1e1e1e;
             border: none;
             padding: 10px 15px;
+            margin-top: 10px;
+            width: 100%;
+            font-weight: bold;
         }
-
         button:hover {
-            background-color: #2980b9;
+            background-color: #3ba8d9;
         }
-
         #game-board {
             font-family: monospace;
             white-space: pre;
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #555;
+            margin-top: 20px;
         }
-
-        .controls {
+        #result, #simulation-result {
+            background-color: #2d2d2d;
+            padding: 10px;
+            border-radius: 5px;
             margin-top: 20px;
         }
     </style>
 </head>
-
 <body>
     <h1>Tetris Game Processor</h1>
 
     <h2>Process Games</h2>
-    <form hx-post="/process" hx-target="#result">
+    <form hx-post="/process" hx-target="#result" hx-swap="outerHTML">
         <label>Start Seed: <input name="start" type="number" value="1"></label>
         <label>End Seed: <input name="end" type="number" value="100"></label>
         <label>Goal: <input name="goal" type="number" value="10"></label>
@@ -82,7 +93,18 @@
     </form>
 
     <div id="simulation-result"></div>
-
+    <script>
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'result') {
+                var response = JSON.parse(event.detail.xhr.responseText);
+                if (response.download_url) {
+                    var link = document.createElement('a');
+                    link.href = response.download_url;
+                    link.download = 'winnable_games.csv';
+                    link.click();
+                }
+            }
+        });
+    </script>
 </body>
-
 </html>
