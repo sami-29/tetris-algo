@@ -8,20 +8,31 @@ import io
 import logging
 import concurrent.futures
 import threading
+import traceback
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
 def solve_game(args):
     game, max_moves = args
-    solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_moves)
-    result, moves, failed_attempts = solver.solve()
-    return game if result else None
+    try:
+        solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_moves)
+        result, moves, failed_attempts = solver.solve()
+        return game if result else None
+    except Exception as e:
+        logging.error(f"Error in solve_game: {str(e)}")
+        logging.error(traceback.format_exc())
+        return None
 
 def generate_game(args):
     seed, goal, tetrominoes, initial_height_max = args
-    return TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+    try:
+        return TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+    except Exception as e:
+        logging.error(f"Error in generate_game: {str(e)}")
+        logging.error(traceback.format_exc())
+        return None
 
 def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts):
     num_processes = multiprocessing.cpu_count()
@@ -37,11 +48,14 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
             future_to_game = {executor.submit(generate_game, (i, goal, tetrominoes, initial_height_max)): i for i in range(start, end)}
             for future in concurrent.futures.as_completed(future_to_game):
                 try:
-                    games.append(future.result())
+                    game = future.result()
+                    if game is not None:
+                        games.append(game)
                     if len(games) % 100 == 0:
                         logging.info(f"Generated {len(games)} games")
                 except Exception as e:
                     logging.error(f"Error generating game: {str(e)}")
+                    logging.error(traceback.format_exc())
             end_game_generation = time()
             logging.info(f"Time to generate games: {end_game_generation - start_game_generation:.2f} seconds")
 
@@ -56,11 +70,13 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
                         logging.info(f"Found {len(winnable_games)} winnable games")
                 except Exception as e:
                     logging.error(f"Error solving game: {str(e)}")
+                    logging.error(traceback.format_exc())
             end_game_solving = time()
             logging.info(f"Time to solve games: {end_game_solving - start_game_solving:.2f} seconds")
 
     except Exception as e:
         logging.error(f"Error in game generation and solving process: {str(e)}")
+        logging.error(traceback.format_exc())
 
     total_time = time() - start_loop
     log_results(goal, tetrominoes, max_attempts, total_time, winnable_games, len(games))
@@ -95,21 +111,26 @@ def process_games():
     max_attempts = int(request.form['max_attempts'])
 
     def run_processing():
-        winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
+        try:
+            logging.info(f"Starting processing with parameters: start={start}, end={end}, goal={goal}, tetrominoes={tetrominoes}, initial_height_max={initial_height_max}, max_attempts={max_attempts}")
+            winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
 
-        # Create CSV in memory
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
-        for game in winnable_games:
-            writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
+            # Create CSV in memory
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
+            for game in winnable_games:
+                writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
 
-        # Save CSV to file
-        output.seek(0)
-        with open('winnable_games.csv', 'w', newline='') as f:
-            f.write(output.getvalue())
+            # Save CSV to file
+            output.seek(0)
+            with open('winnable_games.csv', 'w', newline='') as f:
+                f.write(output.getvalue())
 
-        logging.info(f'Processing complete. {len(winnable_games)} winnable games found.')
+            logging.info(f'Processing complete. {len(winnable_games)} winnable games found.')
+        except Exception as e:
+            logging.error(f"Error in run_processing: {str(e)}")
+            logging.error(traceback.format_exc())
 
     # Start processing in a separate thread
     thread = threading.Thread(target=run_processing)
