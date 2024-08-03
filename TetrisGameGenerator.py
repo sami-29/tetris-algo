@@ -120,7 +120,7 @@ class TetrisGameGenerator:
                     self.board[row+r][col+c] = 1
         self.clear_lines()
 
-def generate_board_and_sequence(seed: int, tetrominoes: int, initial_height_max: int, goal: int = 0) -> Tuple[np.ndarray, List[str]]:
+def generate_board_and_sequence(seed: int, tetrominoes: int, initial_height_max: int, goal: int = 0) -> Tuple[List[List[int]], List[str]]:
     game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
     return game.board, game.sequence
 
