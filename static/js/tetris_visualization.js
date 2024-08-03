@@ -13,6 +13,8 @@ class TetrisVisualization {
         this.isPlaying = false;
         this.animationInterval = null;
         this.isAnimating = false;
+        this.linesCleared = 0;
+        this.goal = 0;
 
         this.svg = this.container.append('svg')
             .attr('width', this.width * this.cellSize)
@@ -36,6 +38,11 @@ class TetrisVisualization {
     setSequence(sequence) {
         this.sequence = sequence;
         this.updateSequenceDisplay();
+    }
+
+    setGoal(goal) {
+        this.goal = goal;
+        this.updateGameInfo();
     }
 
     setAnimationSpeed(speed) {
@@ -99,12 +106,14 @@ class TetrisVisualization {
         if (this.currentMove > -1 && !this.isAnimating) {
             this.currentMove--;
             this.board = JSON.parse(JSON.stringify(this.initialBoard));
+            this.linesCleared = 0;
             for (let i = 0; i <= this.currentMove; i++) {
                 this.applyMove(this.moves[i]);
             }
             this.drawBoard();
             this.updateSequenceDisplay();
             this.updateControlButtons();
+            this.updateGameInfo();
         }
     }
 
@@ -125,6 +134,7 @@ class TetrisVisualization {
                 this.clearLines();
                 this.drawBoard();
                 this.updateSequenceDisplay();
+                this.updateGameInfo();
                 this.isAnimating = false;
                 this.updateControlButtons();
             }
@@ -156,7 +166,9 @@ class TetrisVisualization {
     }
 
     canPlaceTetromino(shape, row, col) {
-        for (let r = 0; r < shape.length; r++) {
+        for (let r =
+
+ 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
                     if (row + r >= this.height || col + c < 0 || col + c >= this.width || this.board[row + r][col + c] === 1) {
@@ -179,12 +191,16 @@ class TetrisVisualization {
     }
 
     clearLines() {
+        let linesCleared = 0;
         for (let r = this.height - 1; r >= 0; r--) {
             if (this.board[r].every(cell => cell === 1)) {
                 this.board.splice(r, 1);
                 this.board.unshift(new Array(this.width).fill(0));
+                linesCleared++;
             }
         }
+        this.linesCleared += linesCleared;
+        this.updateGameInfo();
     }
 
     togglePlayPause() {
@@ -216,8 +232,14 @@ class TetrisVisualization {
     }
 
     updateControlButtons() {
+        const isLastMove = this.currentMove >= this.moves.length - 1;
         d3.select('#prev-move-btn').attr('disabled', this.currentMove <= -1 || this.isAnimating ? true : null);
-        d3.select('#next-move-btn').attr('disabled', this.currentMove >= this.moves.length - 1 || this.isAnimating ? true : null);
-        d3.select('#play-pause-btn').text(this.isPlaying ? 'Pause' : 'Play');
+        d3.select('#next-move-btn').attr('disabled', isLastMove || this.isAnimating ? true : null);
+        d3.select('#play-pause-btn').text(isLastMove ? 'Restart' : (this.isPlaying ? 'Pause' : 'Play'));
+    }
+
+    updateGameInfo() {
+        const gameInfoDiv = d3.select('#game-info');
+        gameInfoDiv.select('p:last-child').text(`Lines Cleared: ${this.linesCleared}/${this.goal}`);
     }
 }
