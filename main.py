@@ -6,6 +6,8 @@ import multiprocessing
 import csv
 import io
 import logging
+import concurrent.futures
+import threading
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -26,16 +28,27 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
     logging.info(f"Number of processes: {num_processes}")
 
     start_loop = time()
+    games = []
+    winnable_games = []
 
-    with multiprocessing.Pool(processes=num_processes) as pool:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
         start_game_generation = time()
-        games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(start, end)])
+        future_to_game = {executor.submit(generate_game, (i, goal, tetrominoes, initial_height_max)): i for i in range(start, end)}
+        for future in concurrent.futures.as_completed(future_to_game):
+            games.append(future.result())
+            if len(games) % 100 == 0:
+                logging.info(f"Generated {len(games)} games")
         end_game_generation = time()
         logging.info(f"Time to generate games: {end_game_generation - start_game_generation:.2f} seconds")
 
         start_game_solving = time()
-        winnable_games = pool.map(solve_game, [(game, max_attempts) for game in games])
-        winnable_games = [game for game in winnable_games if game is not None]
+        future_to_solve = {executor.submit(solve_game, (game, max_attempts)): game for game in games}
+        for future in concurrent.futures.as_completed(future_to_solve):
+            result = future.result()
+            if result:
+                winnable_games.append(result)
+            if len(winnable_games) % 10 == 0:
+                logging.info(f"Found {len(winnable_games)} winnable games")
         end_game_solving = time()
         logging.info(f"Time to solve games: {end_game_solving - start_game_solving:.2f} seconds")
 
@@ -71,19 +84,29 @@ def process_games():
     initial_height_max = int(request.form['initial_height_max'])
     max_attempts = int(request.form['max_attempts'])
 
-    winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
+    def run_processing():
+        winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
 
-    # Create CSV in memory
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
-    for game in winnable_games:
-        writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
+        for game in winnable_games:
+            writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
 
-    # Create a response with the CSV file
-    output.seek(0)
+        # Save CSV to file
+        output.seek(0)
+        with open('winnable_games.csv', 'w', newline='') as f:
+            f.write(output.getvalue())
+
+        logging.info(f'Processing complete. {len(winnable_games)} winnable games found.')
+
+    # Start processing in a separate thread
+    thread = threading.Thread(target=run_processing)
+    thread.start()
+
     return jsonify({
-        'message': f'Processing complete. {len(winnable_games)} winnable games found.',
+        'message': 'Processing started. Check the console for progress updates.',
         'download_url': '/download_csv'
     })
 
