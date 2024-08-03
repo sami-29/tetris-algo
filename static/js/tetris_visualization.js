@@ -3,7 +3,7 @@ class TetrisVisualization {
         this.container = d3.select(`#${containerId}`);
         this.width = width;
         this.height = height;
-        this.cellSize = 20;
+        this.cellSize = 30;
         this.board = [];
         this.currentMove = -1;
         this.moves = [];
@@ -12,6 +12,7 @@ class TetrisVisualization {
         this.animationSpeed = 5;
         this.isPlaying = false;
         this.animationInterval = null;
+        this.isAnimating = false;
 
         this.svg = this.container.append('svg')
             .attr('width', this.width * this.cellSize)
@@ -29,6 +30,7 @@ class TetrisVisualization {
     setMoves(moves) {
         this.moves = moves;
         this.currentMove = -1;
+        this.updateControlButtons();
     }
 
     setSequence(sequence) {
@@ -39,8 +41,8 @@ class TetrisVisualization {
     setAnimationSpeed(speed) {
         this.animationSpeed = speed;
         if (this.isPlaying) {
-            this.togglePlayPause();
-            this.togglePlayPause();
+            clearInterval(this.animationInterval);
+            this.playAnimation();
         }
     }
 
@@ -86,25 +88,28 @@ class TetrisVisualization {
     }
 
     nextMove() {
-        if (this.currentMove < this.moves.length - 1) {
+        if (this.currentMove < this.moves.length - 1 && !this.isAnimating) {
             this.currentMove++;
             this.animateMove(this.moves[this.currentMove]);
+            this.updateControlButtons();
         }
     }
 
     previousMove() {
-        if (this.currentMove > -1) {
+        if (this.currentMove > -1 && !this.isAnimating) {
+            this.currentMove--;
             this.board = JSON.parse(JSON.stringify(this.initialBoard));
-            for (let i = 0; i <= this.currentMove - 1; i++) {
+            for (let i = 0; i <= this.currentMove; i++) {
                 this.applyMove(this.moves[i]);
             }
-            this.currentMove--;
             this.drawBoard();
             this.updateSequenceDisplay();
+            this.updateControlButtons();
         }
     }
 
     animateMove(move) {
+        this.isAnimating = true;
         const [tetromino, rotation, col] = move;
         const shape = this.getTetromino(tetromino, rotation);
         this.fallingPiece = { shape, row: 0, col };
@@ -120,8 +125,10 @@ class TetrisVisualization {
                 this.clearLines();
                 this.drawBoard();
                 this.updateSequenceDisplay();
+                this.isAnimating = false;
+                this.updateControlButtons();
             }
-        }, 1000 / this.animationSpeed);
+        }, 1000 / (this.animationSpeed * 2));
     }
 
     applyMove(move) {
@@ -187,11 +194,14 @@ class TetrisVisualization {
         } else {
             clearInterval(this.animationInterval);
         }
+        this.updateControlButtons();
     }
 
     playAnimation() {
         this.animationInterval = setInterval(() => {
-            this.nextMove();
+            if (!this.isAnimating) {
+                this.nextMove();
+            }
             if (this.currentMove >= this.moves.length - 1) {
                 this.togglePlayPause();
             }
@@ -203,5 +213,11 @@ class TetrisVisualization {
         sequenceContainer.selectAll('span')
             .data(this.sequence)
             .style('background-color', (d, i) => i === this.currentMove + 1 ? '#004d00' : 'transparent');
+    }
+
+    updateControlButtons() {
+        d3.select('#prev-move-btn').attr('disabled', this.currentMove <= -1 || this.isAnimating ? true : null);
+        d3.select('#next-move-btn').attr('disabled', this.currentMove >= this.moves.length - 1 || this.isAnimating ? true : null);
+        d3.select('#play-pause-btn').text(this.isPlaying ? 'Pause' : 'Play');
     }
 }
