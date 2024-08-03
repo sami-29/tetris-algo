@@ -4,7 +4,8 @@ from time import time
 import multiprocessing
 import csv
 import logging
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
+import io
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -40,8 +41,6 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
 
     total_time = time() - start_loop
     log_results(goal, tetrominoes, max_attempts, total_time, winnable_games, len(games))
-    save_winnable_games(winnable_games)
-
     return winnable_games
 
 def log_results(goal, tetrominoes, max_attempts, total_time, winnable_games, total_games):
@@ -59,49 +58,37 @@ def log_results(goal, tetrominoes, max_attempts, total_time, winnable_games, tot
                        f"It took {total_time:.2f} seconds to pass through all {total_games} seeds "
                        f"with a max_attempts of {max_attempts}.\n")
 
-def save_winnable_games(winnable_games):
-    if winnable_games:
-        with open('winnable_games.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
-            for game in winnable_games:
-                writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
-
 @app.route('/')
 def index():
-    return render_template('index.html', sequence=None)
+    return render_template('index.html')
 
-@app.route('/generate', methods=['POST'])
-def generate_game_route():
+@app.route('/process', methods=['POST'])
+def process_games():
     data = request.json
-    seed = int(data['seed'])
+    start = int(data['start'])
+    end = int(data['end'])
     goal = int(data['goal'])
     tetrominoes = int(data['tetrominoes'])
     initial_height_max = int(data['initial_height_max'])
-
-    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
-
-    return jsonify({
-        'board': game.board.tolist(),
-        'sequence': game.sequence
-    })
-
-@app.route('/solve', methods=['POST'])
-def solve_game_route():
-    data = request.json
-    board = data['board']
-    sequence = data['sequence']
-    goal = int(data['goal'])
     max_attempts = int(data['max_attempts'])
 
-    solver = TetrisSolver(board, sequence, goal, max_attempts=max_attempts)
-    result, moves, failed_attempts = solver.solve()
-
-    return jsonify({
-        'result': result,
-        'moves': moves,
-        'failed_attempts': failed_attempts
-    })
+    winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
+    for game in winnable_games:
+        writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
+    
+    # Create a response with the CSV file
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype='text/csv',
+        as_attachment=True,
+        attachment_filename='winnable_games.csv'
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

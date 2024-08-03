@@ -3,61 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Game Generator and Solver</title>
+    <title>Tetris Game Batch Processor</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        .board {
-            display: grid;
-            grid-template-columns: repeat(10, 20px);
-            gap: 1px;
-        }
-        .cell {
-            width: 20px;
-            height: 20px;
-            border: 1px solid #ccc;
-        }
-        .filled {
-            background-color: #333;
-        }
-    </style>
 </head>
 <body>
     <div id="app">
-        <h1>Tetris Game Generator and Solver</h1>
+        <h1>Tetris Game Batch Processor</h1>
         
-        <h2>Generate Game</h2>
+        <h2>Process Games</h2>
         <div>
-            <label>Seed: <input v-model.number="seed" type="number"></label>
+            <label>Start Seed: <input v-model.number="start" type="number"></label>
+            <label>End Seed: <input v-model.number="end" type="number"></label>
             <label>Goal: <input v-model.number="goal" type="number"></label>
             <label>Tetrominoes: <input v-model.number="tetrominoes" type="number"></label>
             <label>Initial Height Max: <input v-model.number="initial_height_max" type="number"></label>
-            <button @click="generateGame">Generate Game</button>
-        </div>
-
-        <h2>Game Board</h2>
-        <div class="board" v-if="board">
-            <div v-for="row in board" class="row">
-                <div v-for="cell in row" class="cell" :class="{ filled: cell === 1 }"></div>
-            </div>
-        </div>
-
-        <h2>Sequence</h2>
-        <div v-if="sequence">
-            {% raw %}{{ sequence.join(', ') }}{% endraw %}
-        </div>
-
-        <h2>Solve Game</h2>
-        <div>
             <label>Max Attempts: <input v-model.number="max_attempts" type="number"></label>
-            <button @click="solveGame">Solve Game</button>
+            <button @click="processGames">Process Games</button>
         </div>
 
-        <h2>Solution</h2>
-        <div v-if="solution">
-            <p>Result: {% raw %}{{ solution.result ? 'Solved' : 'Not Solved' }}{% endraw %}</p>
-            <p>Moves: {% raw %}{{ solution.moves.join(', ') }}{% endraw %}</p>
-            <p>Failed Attempts: {% raw %}{{ solution.failed_attempts }}{% endraw %}</p>
+        <div v-if="processing">Processing games... This may take a while.</div>
+        <div v-if="downloadReady">
+            <a :href="downloadUrl" download="winnable_games.csv">Download CSV of Winnable Games</a>
         </div>
     </div>
 
@@ -65,35 +32,37 @@
         new Vue({
             el: '#app',
             data: {
-                seed: 1,
+                start: 1,
+                end: 100,
                 goal: 10,
                 tetrominoes: 40,
                 initial_height_max: 7,
                 max_attempts: 10000,
-                board: null,
-                sequence: null,
-                solution: null
+                processing: false,
+                downloadReady: false,
+                downloadUrl: ''
             },
             methods: {
-                generateGame() {
-                    axios.post('/generate', {
-                        seed: this.seed,
+                processGames() {
+                    this.processing = true;
+                    this.downloadReady = false;
+                    axios.post('/process', {
+                        start: this.start,
+                        end: this.end,
                         goal: this.goal,
                         tetrominoes: this.tetrominoes,
-                        initial_height_max: this.initial_height_max
-                    }).then(response => {
-                        this.board = response.data.board;
-                        this.sequence = response.data.sequence;
-                    });
-                },
-                solveGame() {
-                    axios.post('/solve', {
-                        board: this.board,
-                        sequence: this.sequence,
-                        goal: this.goal,
+                        initial_height_max: this.initial_height_max,
                         max_attempts: this.max_attempts
+                    }, {
+                        responseType: 'blob'
                     }).then(response => {
-                        this.solution = response.data;
+                        this.processing = false;
+                        this.downloadReady = true;
+                        const blob = new Blob([response.data], { type: 'text/csv' });
+                        this.downloadUrl = window.URL.createObjectURL(blob);
+                    }).catch(error => {
+                        console.error('Error processing games:', error);
+                        this.processing = false;
                     });
                 }
             }
