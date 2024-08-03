@@ -87,7 +87,7 @@ def process_games():
         io.BytesIO(output.getvalue().encode()),
         mimetype='text/csv',
         as_attachment=True,
-        attachment_filename='./winnable_games.csv'
+        download_name='winnable_games.csv'
     )
 
 if __name__ == "__main__":
