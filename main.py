@@ -73,21 +73,21 @@ def process_games():
     max_attempts = int(data['max_attempts'])
 
     winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
-    
+
     # Create CSV in memory
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["seed", "max_moves", "goal", "initial_height_max"])
     for game in winnable_games:
         writer.writerow([game.seed, game.tetrominoes, game.goal, game.initial_height_max])
-    
+
     # Create a response with the CSV file
     output.seek(0)
     return send_file(
         io.BytesIO(output.getvalue().encode()),
         mimetype='text/csv',
         as_attachment=True,
-        attachment_filename='winnable_games.csv'
+        attachment_filename='./winnable_games.csv'
     )
 
 if __name__ == "__main__":
