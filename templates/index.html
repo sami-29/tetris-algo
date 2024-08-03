@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,16 +11,19 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: #1a1a1a;
+            background-color: black;
             color: #00ff00;
             line-height: 1.6;
             padding: 20px;
         }
-        h1, h2 {
+
+        h1,
+        h2 {
             color: #00ff00;
             text-align: center;
             text-shadow: 2px 2px #003300;
         }
+
         button {
             background-color: #003300;
             color: #00ff00;
@@ -28,44 +32,51 @@
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
         }
+
         button:hover {
             background-color: #004d00;
             color: #00ff00;
         }
+
         input[type="number"] {
-            background-color: #2a2a2a;
+            background-color: black;
             color: #00ff00;
             border: 2px solid #00ff00;
             padding: 5px;
             font-family: 'Courier New', Courier, monospace;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             border: 2px solid #00ff00;
             padding: 20px;
-            background-color: #2a2a2a;
+            background-color: black;
         }
+
         .tab-content {
             display: none;
             border: 2px solid #00ff00;
             padding: 20px;
             margin-top: 20px;
-            background-color: #2a2a2a;
+            background-color: black;
         }
+
         .active {
             display: block;
         }
+
         #tetris-board {
             border: 2px solid #00ff00;
             margin-top: 20px;
         }
     </style>
 </head>
+
 <body x-data="{ tab: 'simulation' }">
     <div class="container">
         <h1>Tetris Solver</h1>
-        
+
         <div>
             <button @click="tab = 'simulation'" :class="{ 'active': tab === 'simulation' }">Simulation</button>
             <button @click="tab = 'single-game'" :class="{ 'active': tab === 'single-game' }">Single Game</button>
@@ -124,7 +135,7 @@
     <script>
         let tetrisVis;
 
-        htmx.on("htmx:afterSwap", function(event) {
+        htmx.on("htmx:afterSwap", function (event) {
             if (event.detail.target.id === "simulation-results") {
                 const data = JSON.parse(event.detail.xhr.response);
                 const resultsDiv = d3.select('#simulation-results');
@@ -137,10 +148,10 @@
                 const data = JSON.parse(event.detail.xhr.response);
                 const resultsDiv = d3.select('#single-game-results');
                 resultsDiv.html('');
-                
+
                 resultsDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
                 resultsDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-                
+
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
                 tetrisVis.setBoard(data.initialBoard);
@@ -169,7 +180,7 @@
                     .attr('min', '1')
                     .attr('max', '10')
                     .attr('value', '5')
-                    .on('input', function() {
+                    .on('input', function () {
                         // Update animation speed based on slider value
                         const speed = this.value;
                         // Implement speed change logic here
@@ -178,4 +189,5 @@
         });
     </script>
 </body>
+
 </html>
