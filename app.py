@@ -5,6 +5,7 @@ from TetrisSolver import TetrisSolver
 from minimization import minimize_max_attempts
 import multiprocessing
 import json
+import time
 
 app = Flask(__name__)
 htmx = HTMX(app)
@@ -21,7 +22,6 @@ def run_simulation():
     initial_height_max = int(data.get('initialHeightMax', 7))
     num_games = int(data.get('numGames', 100))
 
-    # Run the simulation (this is a placeholder, implement the actual simulation logic)
     results = simulate_games(goal, tetrominoes, initial_height_max, num_games)
 
     return jsonify(results)
@@ -48,13 +48,37 @@ def run_single_game():
     })
 
 def simulate_games(goal, tetrominoes, initial_height_max, num_games):
-    # Implement the simulation logic here
-    # This is a placeholder, replace with actual implementation
+    start_time = time.time()
+    winnable_games = 0
+    total_attempts = 0
+
+    with multiprocessing.Pool() as pool:
+        results = pool.starmap(
+            run_single_simulation,
+            [(i, goal, tetrominoes, initial_height_max) for i in range(num_games)]
+        )
+
+    for result, attempts in results:
+        if result:
+            winnable_games += 1
+        total_attempts += attempts
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    average_time = total_time / num_games
+
     return {
-        'winnable_games': num_games // 2,
+        'winnable_games': winnable_games,
         'total_games': num_games,
-        'average_time': 0.5
+        'average_time': average_time,
+        'average_attempts': total_attempts / num_games
     }
+
+def run_single_simulation(seed, goal, tetrominoes, initial_height_max):
+    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+    solver = TetrisSolver(game.board, game.sequence, goal)
+    result, _, failed_attempts = solver.solve()
+    return result, failed_attempts
 
 if __name__ == '__main__':
     app.run(debug=True)

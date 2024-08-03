@@ -10,52 +10,54 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: #000;
-            color: #0f0;
+            background-color: #1a1a1a;
+            color: #00ff00;
             line-height: 1.6;
             padding: 20px;
         }
         h1, h2 {
-            color: #0f0;
+            color: #00ff00;
             text-align: center;
             text-shadow: 2px 2px #003300;
         }
         button {
             background-color: #003300;
-            color: #0f0;
-            border: 2px solid #0f0;
+            color: #00ff00;
+            border: 2px solid #00ff00;
             padding: 5px 10px;
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
         }
         button:hover {
-            background-color: #0f0;
-            color: #000;
+            background-color: #004d00;
+            color: #00ff00;
         }
         input[type="number"] {
-            background-color: #000;
-            color: #0f0;
-            border: 2px solid #0f0;
+            background-color: #2a2a2a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
             padding: 5px;
             font-family: 'Courier New', Courier, monospace;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
-            border: 2px solid #0f0;
+            border: 2px solid #00ff00;
             padding: 20px;
+            background-color: #2a2a2a;
         }
         .tab-content {
             display: none;
-            border: 2px solid #0f0;
+            border: 2px solid #00ff00;
             padding: 20px;
             margin-top: 20px;
+            background-color: #2a2a2a;
         }
         .active {
             display: block;
         }
         #tetris-board {
-            border: 2px solid #0f0;
+            border: 2px solid #00ff00;
             margin-top: 20px;
         }
     </style>
@@ -124,9 +126,20 @@
 
         htmx.on("htmx:afterSwap", function(event) {
             if (event.detail.target.id === "simulation-results") {
-                // Add code to update graphs or statistics here
+                const data = JSON.parse(event.detail.xhr.response);
+                const resultsDiv = d3.select('#simulation-results');
+                resultsDiv.html('');
+                resultsDiv.append('p').text(`Winnable games: ${data.winnable_games}`);
+                resultsDiv.append('p').text(`Total games: ${data.total_games}`);
+                resultsDiv.append('p').text(`Average time: ${data.average_time.toFixed(3)} seconds`);
+                resultsDiv.append('p').text(`Average attempts: ${data.average_attempts.toFixed(2)}`);
             } else if (event.detail.target.id === "single-game-results") {
                 const data = JSON.parse(event.detail.xhr.response);
+                const resultsDiv = d3.select('#single-game-results');
+                resultsDiv.html('');
+                
+                resultsDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
+                resultsDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
                 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
@@ -134,8 +147,7 @@
                 tetrisVis.setMoves(data.moves);
 
                 // Add controls for the visualization
-                const controls = d3.select('#single-game-results')
-                    .append('div')
+                const controls = resultsDiv.append('div')
                     .attr('class', 'controls');
 
                 controls.append('button')
