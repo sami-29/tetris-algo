@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,16 +14,21 @@
             line-height: 1.6;
             padding: 20px;
         }
-        h1, h2 {
+
+        h1,
+        h2 {
             color: #2c3e50;
         }
-        input, button {
+
+        input,
+        button {
             background-color: #fff;
             color: #333;
             border: 1px solid #ccc;
             padding: 5px;
             margin: 5px 0;
         }
+
         button {
             cursor: pointer;
             background-color: #3498db;
@@ -30,9 +36,11 @@
             border: none;
             padding: 10px 15px;
         }
+
         button:hover {
             background-color: #2980b9;
         }
+
         #game-board {
             font-family: monospace;
             white-space: pre;
@@ -40,14 +48,16 @@
             padding: 10px;
             border: 1px solid #ccc;
         }
+
         .controls {
             margin-top: 20px;
         }
     </style>
 </head>
+
 <body>
     <h1>Tetris Game Processor</h1>
-    
+
     <h2>Process Games</h2>
     <form hx-post="/process" hx-target="#result">
         <label>Start Seed: <input name="start" type="number" value="1"></label>
@@ -123,7 +133,7 @@
             }, speed * 100);
         }
 
-        document.body.addEventListener('htmx:afterOnLoad', function(event) {
+        document.body.addEventListener('htmx:afterOnLoad', function (event) {
             if (event.detail.elt.id === 'simulation-result') {
                 moves = event.detail.elt.innerText.split('\n\n');
                 currentMove = 0;
@@ -133,4 +143,5 @@
         });
     </script>
 </body>
+
 </html>
