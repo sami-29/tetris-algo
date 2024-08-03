@@ -27,7 +27,8 @@
             box-shadow: 0 0 10px #0f0;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             color: #0f0;
             text-align: center;
             text-shadow: 2px 2px #003300;
@@ -74,11 +75,13 @@
             width: 60px;
         }
 
-        button[type="submit"], .btn {
+        button[type="submit"],
+        .btn {
             background-color: #006600;
             color: #0f0;
             border: 2px solid #0f0;
-            padding: 10px 20px;
+            padding: 8px 8px;
+            min-width: 100px;
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
             font-size: 16px;
@@ -86,7 +89,8 @@
             margin-top: 10px;
         }
 
-        button[type="submit"]:hover, .btn:hover {
+        button[type="submit"]:hover,
+        .btn:hover {
             background-color: #008000;
             box-shadow: 0 0 10px #0f0;
         }
@@ -122,17 +126,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .speed-control {
             display: flex;
             align-items: center;
+            justify-content: space-around;
         }
 
-        #speed-slider {
-            margin-left: 10px;
-        }
 
         #sequence-display {
             margin-top: 20px;
@@ -188,6 +190,7 @@
         .speed-control {
             display: flex;
             align-items: center;
+            justify-content: space-around;
         }
 
         #speed-slider {
@@ -196,7 +199,7 @@
             height: 10px;
             background: #001a00;
             outline: none;
-            opacity: 0.7;
+            opacity: 0.8;
             transition: opacity .2s;
             border: 1px solid #0f0;
         }
@@ -231,7 +234,7 @@
         #game-info {
             margin-top: 20px;
             padding: 10px;
-            border: 1px solid #0f0;
+
             background-color: #001a00;
         }
 
@@ -239,7 +242,9 @@
             .single-game-layout {
                 flex-direction: column;
             }
-            .left-column, .right-column {
+
+            .left-column,
+            .right-column {
                 width: 100%;
             }
         }
@@ -251,11 +256,14 @@
         <h1>Tetris Solver</h1>
 
         <div class="tab-buttons">
-            <button @click="setTab('simulation')" :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }">Simulation</button>
-            <button @click="setTab('single-game')" :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }">Single Game</button>
+            <button @click="setTab('simulation')"
+                :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }">Simulation</button>
+            <button @click="setTab('single-game')"
+                :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }">Single Game</button>
         </div>
 
-        <div x-show="$store.tab === 'simulation'" class="tab-content" :class="{ 'active': $store.tab === 'simulation' }">
+        <div x-show="$store.tab === 'simulation'" class="tab-content"
+            :class="{ 'active': $store.tab === 'simulation' }">
             <h2>Run Simulation</h2>
             <div class="form-container">
                 <form hx-post="/run_simulation" hx-trigger="submit" hx-target="#simulation-results" hx-swap="innerHTML">
@@ -281,12 +289,14 @@
             <div class="results-container" id="simulation-results"></div>
         </div>
 
-        <div x-show="$store.tab === 'single-game'" class="tab-content" :class="{ 'active': $store.tab === 'single-game' }">
+        <div x-show="$store.tab === 'single-game'" class="tab-content"
+            :class="{ 'active': $store.tab === 'single-game' }">
             <h2>Run Single Game</h2>
             <div class="single-game-layout">
                 <div class="left-column">
                     <div class="form-container">
-                        <form hx-post="/run_single_game" hx-trigger="submit" hx-target="#single-game-results" hx-swap="innerHTML">
+                        <form hx-post="/run_single_game" hx-trigger="submit" hx-target="#single-game-results"
+                            hx-swap="innerHTML">
                             <div>
                                 <label for="seed">Seed:</label>
                                 <input type="number" id="seed" name="seed" required value="42">
@@ -396,7 +406,7 @@
                 d3.select('#prev-move-btn').on('click', () => tetrisVis.previousMove());
                 d3.select('#play-pause-btn').on('click', () => tetrisVis.togglePlayPause());
                 d3.select('#next-move-btn').on('click', () => tetrisVis.nextMove());
-                d3.select('#speed-slider').on('input', function() {
+                d3.select('#speed-slider').on('input', function () {
                     const speed = this.value;
                     tetrisVis.setAnimationSpeed(speed);
                 });
@@ -424,15 +434,15 @@
                 },
                 body: JSON.stringify({ seed, initialHeightMax, goal, tetrominoes }),
             })
-            .then(response => response.json())
-            .then(data => {
-                if (tetrisVis) {
-                    tetrisVis.setBoard(data.board);
-                } else {
-                    tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
-                    tetrisVis.setBoard(data.board);
-                }
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (tetrisVis) {
+                        tetrisVis.setBoard(data.board);
+                    } else {
+                        tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
+                        tetrisVis.setBoard(data.board);
+                    }
+                });
         }
     </script>
 </body>
