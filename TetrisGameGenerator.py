@@ -1,4 +1,4 @@
-import numpy as np
+import random
 import logging
 from typing import List, Tuple, Dict
 
@@ -23,9 +23,9 @@ class TetrisGameGenerator:
         self.goal = goal
         self.tetrominoes = tetrominoes
         self.initial_height_max = initial_height_max
-        self.board = np.zeros((self.height, self.width), dtype=int)
+        self.board = [[0 for _ in range(self.width)] for _ in range(self.height)]
 
-        np.random.seed(self.seed)
+        random.seed(self.seed)
         self.fill_grid()
         self.sequence = self.generate_tetromino_sequence(self.tetrominoes)
 
@@ -35,45 +35,52 @@ class TetrisGameGenerator:
             tetromino = list(zip(*tetromino[::-1]))
         return [list(row) for row in tetromino]
 
-    def is_valid_move(self, tetromino: np.ndarray, row: int, col: int) -> bool:
+    def is_valid_move(self, tetromino: List[List[int]], row: int, col: int) -> bool:
         shape = tetromino
-        rows, cols = shape.shape
+        rows, cols = len(shape), len(shape[0])
 
         if row + rows > self.height or col < 0 or col + cols > self.width:
             return False
 
-        return not np.any(np.logical_and(shape == 1, self.board[row:row+rows, col:col+cols] == 1))
+        return not any(shape[r][c] == 1 and self.board[row+r][col+c] == 1
+                       for r in range(rows) for c in range(cols))
 
-    def place_tetromino(self, tetromino: np.ndarray, row: int, col: int) -> None:
+    def place_tetromino(self, tetromino: List[List[int]], row: int, col: int) -> None:
         shape = tetromino
-        rows, cols = shape.shape
+        rows, cols = len(shape), len(shape[0])
 
-        while row + rows <= self.height and not np.any(np.logical_and(shape == 1, self.board[row:row+rows, col:col+cols] == 1)):
+        while row + rows <= self.height and not any(shape[r][c] == 1 and self.board[row+r][col+c] == 1
+                                                    for r in range(rows) for c in range(cols)):
             row += 1
 
-        self.board[row-1:row-1+rows, col:col+cols] = np.logical_or(self.board[row-1:row-1+rows, col:col+cols], shape)
+        for r in range(rows):
+            for c in range(cols):
+                if shape[r][c] == 1:
+                    self.board[row-1+r][col+c] = 1
+
         self.clear_lines()
 
     def clear_lines(self) -> None:
-        full_rows = np.all(self.board, axis=1)
-        self.board = np.vstack([np.zeros((np.sum(full_rows), self.width), dtype=int), self.board[~full_rows]])
+        self.board = [[0 for _ in range(self.width)] for _ in range(sum(1 for row in self.board if 0 in row))] + \
+                     [row for row in self.board if 0 not in row]
 
-    def calculate_placement_height(self, tetromino: np.ndarray, col: int) -> int:
+    def calculate_placement_height(self, tetromino: List[List[int]], col: int) -> int:
         shape = tetromino
-        rows, cols = shape.shape
+        rows, cols = len(shape), len(shape[0])
 
         height = 0
-        while height + rows <= self.height and not np.any(np.logical_and(shape == 1, self.board[height:height+rows, col:col+cols] == 1)):
+        while height + rows <= self.height and not any(shape[r][c] == 1 and self.board[height+r][col+c] == 1
+                                                       for r in range(rows) for c in range(cols)):
             height += 1
 
         return height
 
     def fill_grid(self) -> None:
         while True:
-            tetromino = np.random.choice(self.tetrominoes_names)
-            rotation = np.random.randint(0, len(self.tetromino_shapes[tetromino]))
-            shape = np.array(self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation))
-            col_to_try = np.random.randint(0, self.width - shape.shape[1] + 1)
+            tetromino = random.choice(self.tetrominoes_names)
+            rotation = random.randint(0, len(self.tetromino_shapes[tetromino]) - 1)
+            shape = self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation)
+            col_to_try = random.randint(0, self.width - len(shape[0]) + 1)
             if self.is_valid_move(shape, 0, col_to_try):
                 placement_height = self.calculate_placement_height(shape, col_to_try)
                 if self.height + 1 - placement_height <= self.initial_height_max:
@@ -86,9 +93,9 @@ class TetrisGameGenerator:
         sequence = []
 
         while len(sequence) < max_moves:
-            bag = np.random.permutation(self.tetrominoes_names).tolist()
+            bag = random.sample(self.tetrominoes_names, bag_size)
             while any(bag[i] == bag[i + 1] in ['S', 'Z'] for i in range(bag_size - 1)):
-                np.random.shuffle(bag)
+                random.shuffle(bag)
             sequence.extend(bag)
 
         return sequence[:max_moves]
