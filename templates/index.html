@@ -55,9 +55,9 @@
 
         <h2>Solution</h2>
         <div v-if="solution">
-            <p>Result: {{ solution.result ? 'Solved' : 'Not Solved' }}</p>
-            <p>Moves: {{ solution.moves.join(', ') }}</p>
-            <p>Failed Attempts: {{ solution.failed_attempts }}</p>
+            <p>Result: {% raw %}{{ solution.result ? 'Solved' : 'Not Solved' }}{% endraw %}</p>
+            <p>Moves: {% raw %}{{ solution.moves.join(', ') }}{% endraw %}</p>
+            <p>Failed Attempts: {% raw %}{{ solution.failed_attempts }}{% endraw %}</p>
         </div>
     </div>
 
