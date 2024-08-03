@@ -31,26 +31,36 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
     games = []
     winnable_games = []
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
-        start_game_generation = time()
-        future_to_game = {executor.submit(generate_game, (i, goal, tetrominoes, initial_height_max)): i for i in range(start, end)}
-        for future in concurrent.futures.as_completed(future_to_game):
-            games.append(future.result())
-            if len(games) % 100 == 0:
-                logging.info(f"Generated {len(games)} games")
-        end_game_generation = time()
-        logging.info(f"Time to generate games: {end_game_generation - start_game_generation:.2f} seconds")
+    try:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+            start_game_generation = time()
+            future_to_game = {executor.submit(generate_game, (i, goal, tetrominoes, initial_height_max)): i for i in range(start, end)}
+            for future in concurrent.futures.as_completed(future_to_game):
+                try:
+                    games.append(future.result())
+                    if len(games) % 100 == 0:
+                        logging.info(f"Generated {len(games)} games")
+                except Exception as e:
+                    logging.error(f"Error generating game: {str(e)}")
+            end_game_generation = time()
+            logging.info(f"Time to generate games: {end_game_generation - start_game_generation:.2f} seconds")
 
-        start_game_solving = time()
-        future_to_solve = {executor.submit(solve_game, (game, max_attempts)): game for game in games}
-        for future in concurrent.futures.as_completed(future_to_solve):
-            result = future.result()
-            if result:
-                winnable_games.append(result)
-            if len(winnable_games) % 10 == 0:
-                logging.info(f"Found {len(winnable_games)} winnable games")
-        end_game_solving = time()
-        logging.info(f"Time to solve games: {end_game_solving - start_game_solving:.2f} seconds")
+            start_game_solving = time()
+            future_to_solve = {executor.submit(solve_game, (game, max_attempts)): game for game in games}
+            for future in concurrent.futures.as_completed(future_to_solve):
+                try:
+                    result = future.result()
+                    if result:
+                        winnable_games.append(result)
+                    if len(winnable_games) % 10 == 0:
+                        logging.info(f"Found {len(winnable_games)} winnable games")
+                except Exception as e:
+                    logging.error(f"Error solving game: {str(e)}")
+            end_game_solving = time()
+            logging.info(f"Time to solve games: {end_game_solving - start_game_solving:.2f} seconds")
+
+    except Exception as e:
+        logging.error(f"Error in game generation and solving process: {str(e)}")
 
     total_time = time() - start_loop
     log_results(goal, tetrominoes, max_attempts, total_time, winnable_games, len(games))
