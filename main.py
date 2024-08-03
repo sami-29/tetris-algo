@@ -4,8 +4,14 @@ from time import time
 import multiprocessing
 import csv
 import logging
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, send_file
+from TetrisSolver import TetrisSolver
+from TetrisGameGenerator import TetrisGameGenerator
+from time import time
+import multiprocessing
+import csv
 import io
+import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -64,13 +70,12 @@ def index():
 
 @app.route('/process', methods=['POST'])
 def process_games():
-    data = request.json
-    start = int(data['start'])
-    end = int(data['end'])
-    goal = int(data['goal'])
-    tetrominoes = int(data['tetrominoes'])
-    initial_height_max = int(data['initial_height_max'])
-    max_attempts = int(data['max_attempts'])
+    start = int(request.form['start'])
+    end = int(request.form['end'])
+    goal = int(request.form['goal'])
+    tetrominoes = int(request.form['tetrominoes'])
+    initial_height_max = int(request.form['initial_height_max'])
+    max_attempts = int(request.form['max_attempts'])
 
     winnable_games = run_game_generation_and_solving(start, end, goal, tetrominoes, initial_height_max, max_attempts)
 
@@ -89,6 +94,27 @@ def process_games():
         as_attachment=True,
         download_name='winnable_games.csv'
     )
+
+@app.route('/simulate', methods=['POST'])
+def simulate_game():
+    seed = int(request.form['seed'])
+    goal = int(request.form['goal'])
+    tetrominoes = int(request.form['tetrominoes'])
+    initial_height_max = int(request.form['initial_height_max'])
+    max_attempts = int(request.form['max_attempts'])
+
+    game = generate_game((seed, goal, tetrominoes, initial_height_max))
+    solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_attempts)
+    result, moves, failed_attempts = solver.solve()
+
+    if result:
+        game_states = [game.visualize_board()]
+        for move in moves:
+            game.place_tetromino(move[0], move[1], move[2])
+            game_states.append(game.visualize_board())
+        return "\n\n".join(game_states)
+    else:
+        return "Game is not winnable"
 
 if __name__ == "__main__":
     app.run(debug=True)

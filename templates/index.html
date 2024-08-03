@@ -3,68 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Game Batch Processor</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Tetris Game Processor</title>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #0f0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #0ff;
+        }
+        input, button {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px;
+            margin: 5px 0;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0f0;
+            color: #000;
+        }
+        #game-board {
+            font-family: monospace;
+            white-space: pre;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div id="app">
-        <h1>Tetris Game Batch Processor</h1>
-        
-        <h2>Process Games</h2>
-        <div>
-            <label>Start Seed: <input v-model.number="start" type="number"></label>
-            <label>End Seed: <input v-model.number="end" type="number"></label>
-            <label>Goal: <input v-model.number="goal" type="number"></label>
-            <label>Tetrominoes: <input v-model.number="tetrominoes" type="number"></label>
-            <label>Initial Height Max: <input v-model.number="initial_height_max" type="number"></label>
-            <label>Max Attempts: <input v-model.number="max_attempts" type="number"></label>
-            <button @click="processGames">Process Games</button>
-        </div>
+    <h1>Tetris Game Processor</h1>
+    
+    <h2>Process Games</h2>
+    <form hx-post="/process" hx-target="#result">
+        <label>Start Seed: <input name="start" type="number" value="1"></label>
+        <label>End Seed: <input name="end" type="number" value="100"></label>
+        <label>Goal: <input name="goal" type="number" value="10"></label>
+        <label>Tetrominoes: <input name="tetrominoes" type="number" value="40"></label>
+        <label>Initial Height Max: <input name="initial_height_max" type="number" value="7"></label>
+        <label>Max Attempts: <input name="max_attempts" type="number" value="10000"></label>
+        <button type="submit">Process Games</button>
+    </form>
 
-        <div v-if="processing">Processing games... This may take a while.</div>
-        <div v-if="downloadReady">
-            <a :href="downloadUrl" download="winnable_games.csv">Download CSV of Winnable Games</a>
-        </div>
+    <div id="result"></div>
+
+    <h2>Simulate Single Game</h2>
+    <form hx-post="/simulate" hx-target="#simulation-result">
+        <label>Seed: <input name="seed" type="number" value="1"></label>
+        <label>Goal: <input name="goal" type="number" value="10"></label>
+        <label>Tetrominoes: <input name="tetrominoes" type="number" value="40"></label>
+        <label>Initial Height Max: <input name="initial_height_max" type="number" value="7"></label>
+        <label>Max Attempts: <input name="max_attempts" type="number" value="10000"></label>
+        <button type="submit">Simulate Game</button>
+    </form>
+
+    <div id="simulation-result"></div>
+    <div id="game-board"></div>
+    <div class="controls">
+        <button id="prev-move" disabled>Previous Move</button>
+        <button id="next-move" disabled>Next Move</button>
+        <label>Speed: <input type="range" id="speed" min="1" max="10" value="5"></label>
     </div>
 
     <script>
-        new Vue({
-            el: '#app',
-            data: {
-                start: 1,
-                end: 100,
-                goal: 10,
-                tetrominoes: 40,
-                initial_height_max: 7,
-                max_attempts: 10000,
-                processing: false,
-                downloadReady: false,
-                downloadUrl: ''
-            },
-            methods: {
-                processGames() {
-                    this.processing = true;
-                    this.downloadReady = false;
-                    axios.post('/process', {
-                        start: this.start,
-                        end: this.end,
-                        goal: this.goal,
-                        tetrominoes: this.tetrominoes,
-                        initial_height_max: this.initial_height_max,
-                        max_attempts: this.max_attempts
-                    }, {
-                        responseType: 'blob'
-                    }).then(response => {
-                        this.processing = false;
-                        this.downloadReady = true;
-                        const blob = new Blob([response.data], { type: 'text/csv' });
-                        this.downloadUrl = window.URL.createObjectURL(blob);
-                    }).catch(error => {
-                        console.error('Error processing games:', error);
-                        this.processing = false;
-                    });
+        let currentMove = 0;
+        let moves = [];
+        let intervalId = null;
+
+        document.getElementById('prev-move').addEventListener('click', () => {
+            if (currentMove > 0) {
+                currentMove--;
+                updateGameBoard();
+            }
+        });
+
+        document.getElementById('next-move').addEventListener('click', () => {
+            if (currentMove < moves.length - 1) {
+                currentMove++;
+                updateGameBoard();
+            }
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                startSimulation();
+            }
+        });
+
+        function updateGameBoard() {
+            document.getElementById('game-board').innerText = moves[currentMove];
+            document.getElementById('prev-move').disabled = currentMove === 0;
+            document.getElementById('next-move').disabled = currentMove === moves.length - 1;
+        }
+
+        function startSimulation() {
+            const speed = 11 - document.getElementById('speed').value;
+            intervalId = setInterval(() => {
+                if (currentMove < moves.length - 1) {
+                    currentMove++;
+                    updateGameBoard();
+                } else {
+                    clearInterval(intervalId);
                 }
+            }, speed * 100);
+        }
+
+        document.body.addEventListener('htmx:afterOnLoad', function(event) {
+            if (event.detail.elt.id === 'simulation-result') {
+                moves = event.detail.elt.innerText.split('\n\n');
+                currentMove = 0;
+                updateGameBoard();
+                startSimulation();
             }
         });
     </script>

@@ -95,6 +95,19 @@ class TetrisGameGenerator:
         for row in self.board:
             print(' '.join(map(str, row)))
 
+    def visualize_board(self) -> str:
+        return '\n'.join([' '.join(map(str, row)) for row in self.board])
+
+    def place_tetromino(self, tetromino: str, rotation: int, col: int) -> None:
+        shape = self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation)
+        rows, cols = shape.shape
+        row = 0
+        while row + rows <= self.height and not np.any(np.logical_and(shape == 1, self.board[row:row+rows, col:col+cols] == 1)):
+            row += 1
+        row -= 1
+        self.board[row:row+rows, col:col+cols] = np.logical_or(self.board[row:row+rows, col:col+cols], shape)
+        self.clear_lines()
+
 def generate_board_and_sequence(seed: int, tetrominoes: int, initial_height_max: int, goal: int = 0) -> Tuple[np.ndarray, List[str]]:
     game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
     return game.board, game.sequence
