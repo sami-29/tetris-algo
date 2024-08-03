@@ -245,26 +245,28 @@
 
         function setTab(newTab) {
             Alpine.store('tab', newTab);
-            updateURL();
+            updateURL(newTab);
         }
 
-        function updateURL() {
+        function updateURL(tab) {
             const url = new URL(window.location);
-            url.searchParams.set('tab', this.tab);
+            url.searchParams.set('tab', tab);
             window.history.pushState({}, '', url);
-            loadTabFromURL();
         }
 
         function loadTabFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
             if (tabParam && (tabParam === 'simulation' || tabParam === 'single-game')) {
-                this.tab = tabParam;
+                Alpine.store('tab', tabParam);
             }
         }
 
         // Load tab from URL on page load
         window.addEventListener('load', loadTabFromURL);
+
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', loadTabFromURL);
 
         htmx.on("htmx:afterSwap", function (event) {
             if (event.detail.target.id === "simulation-results") {
