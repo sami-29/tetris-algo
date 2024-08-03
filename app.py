@@ -15,11 +15,11 @@ def index():
 
 @app.route('/run_simulation', methods=['POST'])
 def run_simulation():
-    data = request.json
-    goal = int(data['goal'])
-    tetrominoes = int(data['tetrominoes'])
-    initial_height_max = int(data['initialHeightMax'])
-    num_games = int(data['numGames'])
+    data = request.form
+    goal = int(data.get('goal', 15))
+    tetrominoes = int(data.get('tetrominoes', 40))
+    initial_height_max = int(data.get('initialHeightMax', 7))
+    num_games = int(data.get('numGames', 100))
 
     # Run the simulation (this is a placeholder, implement the actual simulation logic)
     results = simulate_games(goal, tetrominoes, initial_height_max, num_games)
@@ -28,11 +28,11 @@ def run_simulation():
 
 @app.route('/run_single_game', methods=['POST'])
 def run_single_game():
-    data = request.json
-    seed = int(data['seed'])
-    goal = int(data['goal'])
-    tetrominoes = int(data['tetrominoes'])
-    initial_height_max = int(data['initialHeightMax'])
+    data = request.form
+    seed = int(data.get('seed', 42))
+    goal = int(data.get('goal', 15))
+    tetrominoes = int(data.get('tetrominoes', 40))
+    initial_height_max = int(data.get('initialHeightMax', 7))
 
     # Generate and solve a single game
     game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
