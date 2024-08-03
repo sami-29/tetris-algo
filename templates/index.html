@@ -77,6 +77,32 @@
             font-family: 'Courier New', Courier, monospace;
         }
 
+        button[type="submit"] {
+            background-color: #006600;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #008000;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        form div {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: inline-block;
+            width: 150px;
+        }
+
         .tab-content {
             display: none;
             border: 2px solid #0f0;
@@ -226,7 +252,19 @@
             const url = new URL(window.location);
             url.searchParams.set('tab', this.tab);
             window.history.pushState({}, '', url);
+            loadTabFromURL();
         }
+
+        function loadTabFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam && (tabParam === 'simulation' || tabParam === 'single-game')) {
+                this.tab = tabParam;
+            }
+        }
+
+        // Load tab from URL on page load
+        window.addEventListener('load', loadTabFromURL);
 
         htmx.on("htmx:afterSwap", function (event) {
             if (event.detail.target.id === "simulation-results") {
