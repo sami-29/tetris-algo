@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Solver</title>
+    <script src="https://unpkg.com/htmx.org@1.8.0"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white" x-data="{ tab: 'simulation' }">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8">Tetris Solver</h1>
+        
+        <div class="mb-8">
+            <button @click="tab = 'simulation'" :class="{ 'bg-blue-600': tab === 'simulation', 'bg-gray-700': tab !== 'simulation' }" class="px-4 py-2 rounded-l-lg">Simulation</button>
+            <button @click="tab = 'single-game'" :class="{ 'bg-blue-600': tab === 'single-game', 'bg-gray-700': tab !== 'single-game' }" class="px-4 py-2 rounded-r-lg">Single Game</button>
+        </div>
+
+        <div x-show="tab === 'simulation'" x-cloak>
+            <h2 class="text-2xl font-bold mb-4">Run Simulation</h2>
+            <form hx-post="/run_simulation" hx-trigger="submit" hx-target="#simulation-results" hx-swap="innerHTML" class="space-y-4">
+                <div>
+                    <label for="goal" class="block mb-2">Goal:</label>
+                    <input type="number" id="goal" name="goal" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="tetrominoes" class="block mb-2">Tetrominoes:</label>
+                    <input type="number" id="tetrominoes" name="tetrominoes" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="initialHeightMax" class="block mb-2">Initial Height Max:</label>
+                    <input type="number" id="initialHeightMax" name="initialHeightMax" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="numGames" class="block mb-2">Number of Games:</label>
+                    <input type="number" id="numGames" name="numGames" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <button type="submit" class="bg-blue-600 px-4 py-2 rounded">Run Simulation</button>
+            </form>
+            <div id="simulation-results" class="mt-8"></div>
+        </div>
+
+        <div x-show="tab === 'single-game'" x-cloak>
+            <h2 class="text-2xl font-bold mb-4">Run Single Game</h2>
+            <form hx-post="/run_single_game" hx-trigger="submit" hx-target="#single-game-results" hx-swap="innerHTML" class="space-y-4">
+                <div>
+                    <label for="seed" class="block mb-2">Seed:</label>
+                    <input type="number" id="seed" name="seed" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="goal" class="block mb-2">Goal:</label>
+                    <input type="number" id="goal" name="goal" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="tetrominoes" class="block mb-2">Tetrominoes:</label>
+                    <input type="number" id="tetrominoes" name="tetrominoes" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label for="initialHeightMax" class="block mb-2">Initial Height Max:</label>
+                    <input type="number" id="initialHeightMax" name="initialHeightMax" required class="bg-gray-700 rounded px-3 py-2">
+                </div>
+                <button type="submit" class="bg-blue-600 px-4 py-2 rounded">Run Single Game</button>
+            </form>
+            <div id="single-game-results" class="mt-8"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/tetris_visualization.js') }}"></script>
+    <script>
+        let tetrisVis;
+
+        htmx.on("htmx:afterSwap", function(event) {
+            if (event.detail.target.id === "simulation-results") {
+                // Add code to update graphs or statistics here
+            } else if (event.detail.target.id === "single-game-results") {
+                const data = JSON.parse(event.detail.xhr.response);
+                
+                // Initialize the Tetris board visualization
+                tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
+                tetrisVis.setBoard(data.initialBoard);
+                tetrisVis.setMoves(data.moves);
+
+                // Add controls for the visualization
+                const controls = d3.select('#single-game-results')
+                    .append('div')
+                    .attr('class', 'mt-4 space-x-2');
+
+                controls.append('button')
+                    .text('Previous Move')
+                    .attr('class', 'bg-blue-600 px-4 py-2 rounded')
+                    .on('click', () => tetrisVis.previousMove());
+
+                controls.append('button')
+                    .text('Next Move')
+                    .attr('class', 'bg-blue-600 px-4 py-2 rounded')
+                    .on('click', () => tetrisVis.nextMove());
+
+                // Add a speed slider
+                const speedControl = controls.append('div').attr('class', 'mt-4');
+                speedControl.append('label')
+                    .attr('for', 'speed-slider')
+                    .text('Animation Speed: ');
+                speedControl.append('input')
+                    .attr('type', 'range')
+                    .attr('id', 'speed-slider')
+                    .attr('min', '1')
+                    .attr('max', '10')
+                    .attr('value', '5')
+                    .on('input', function() {
+                        // Update animation speed based on slider value
+                        const speed = this.value;
+                        // Implement speed change logic here
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
