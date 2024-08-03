@@ -50,6 +50,19 @@ def run_single_game():
         'sequence': game.sequence
     })
 
+@app.route('/generate_initial_board', methods=['POST'])
+def generate_initial_board():
+    data = request.json
+    seed = int(data.get('seed', 42))
+    goal = int(data.get('goal', 15))
+    tetrominoes = int(data.get('tetrominoes', 40))
+    initial_height_max = int(data.get('initialHeightMax', 7))
+
+    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
+    return jsonify({
+        'board': game.board.tolist()
+    })
+
 def simulate_games(goal, tetrominoes, initial_height_max, num_games):
     logging.info(f"Starting simulation with {num_games} games")
     start_time = time.time()

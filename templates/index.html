@@ -11,55 +11,56 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: black;
-            color: #00ff00;
+            background-color: #000;
+            color: #0f0;
             line-height: 1.6;
             padding: 20px;
         }
 
-        h1,
-        h2 {
-            color: #00ff00;
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 2px solid #0f0;
+            padding: 20px;
+            background-color: #001a00;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        h1, h2 {
+            color: #0f0;
             text-align: center;
             text-shadow: 2px 2px #003300;
         }
 
         button {
             background-color: #003300;
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            padding: 5px 10px;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 8px 16px;
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
+            transition: all 0.3s ease;
         }
 
         button:hover {
             background-color: #004d00;
-            color: #00ff00;
+            box-shadow: 0 0 5px #0f0;
         }
 
         input[type="number"] {
-            background-color: black;
-            color: #00ff00;
-            border: 2px solid #00ff00;
+            background-color: #001a00;
+            color: #0f0;
+            border: 2px solid #0f0;
             padding: 5px;
             font-family: 'Courier New', Courier, monospace;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid #00ff00;
-            padding: 20px;
-            background-color: black;
-        }
-
         .tab-content {
             display: none;
-            border: 2px solid #00ff00;
+            border: 2px solid #0f0;
             padding: 20px;
             margin-top: 20px;
-            background-color: black;
+            background-color: #001a00;
         }
 
         .active {
@@ -67,8 +68,42 @@
         }
 
         #tetris-board {
-            border: 2px solid #00ff00;
+            border: 2px solid #0f0;
             margin-top: 20px;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+        }
+
+        #speed-slider {
+            margin-left: 10px;
+        }
+
+        #sequence-display {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #0f0;
+            background-color: #001a00;
+        }
+
+        .tetromino-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #0f0;
+            text-align: center;
+            line-height: 20px;
         }
     </style>
 </head>
@@ -162,6 +197,7 @@
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
                 tetrisVis.setBoard(data.initialBoard);
                 tetrisVis.setMoves(data.moves);
+                tetrisVis.setSequence(data.sequence);
 
                 // Add controls for the visualization
                 const controls = resultsDiv.append('div')
@@ -175,6 +211,10 @@
                     .text('Next Move')
                     .on('click', () => tetrisVis.nextMove());
 
+                controls.append('button')
+                    .text('Play/Pause')
+                    .on('click', () => tetrisVis.togglePlayPause());
+
                 // Add a speed slider
                 const speedControl = controls.append('div').attr('class', 'speed-control');
                 speedControl.append('label')
@@ -187,12 +227,53 @@
                     .attr('max', '10')
                     .attr('value', '5')
                     .on('input', function () {
-                        // Update animation speed based on slider value
                         const speed = this.value;
-                        // Implement speed change logic here
+                        tetrisVis.setAnimationSpeed(speed);
                     });
+
+                // Add sequence display
+                const sequenceDisplay = resultsDiv.append('div')
+                    .attr('id', 'sequence-display');
+                sequenceDisplay.append('h3').text('Tetromino Sequence:');
+                const sequenceContainer = sequenceDisplay.append('div');
+
+                data.sequence.forEach((tetromino, index) => {
+                    sequenceContainer.append('span')
+                        .attr('class', 'tetromino-preview')
+                        .text(tetromino)
+                        .style('background-color', index === 0 ? '#004d00' : 'transparent');
+                });
             }
         });
+
+        // Update initial board when inputs change
+        document.querySelectorAll('#seed, #initialHeightMax').forEach(input => {
+            input.addEventListener('change', updateInitialBoard);
+        });
+
+        function updateInitialBoard() {
+            const seed = document.getElementById('seed').value;
+            const initialHeightMax = document.getElementById('initialHeightMax').value;
+            const goal = document.getElementById('goal').value;
+            const tetrominoes = document.getElementById('tetrominoes').value;
+
+            fetch('/generate_initial_board', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ seed, initialHeightMax, goal, tetrominoes }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (tetrisVis) {
+                    tetrisVis.setBoard(data.board);
+                } else {
+                    tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
+                    tetrisVis.setBoard(data.board);
+                }
+            });
+        }
     </script>
 </body>
 
