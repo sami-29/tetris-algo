@@ -118,11 +118,10 @@ class TetrisSolver:
 
             for col in columns_to_try:
                 if self.failed_attempts >= self.max_attempts:
-
-                    return False, self.stack, self.failed_attempts
+                    return False, [], self.failed_attempts
                 boardcopy = np.copy(self.board)
-
                 current_iteration_lines_cleared = self.lines_cleared
+
                 if self.is_valid_move(shape[rotation], 0, col):
                     self.place_tetromino(shape[rotation], 0, col)
                 else:
@@ -136,31 +135,22 @@ class TetrisSolver:
                     continue
 
                 elif self.lines_cleared >= self.goal:
-                    self.stack.append((current, rotation, col))
-                    return True, self.stack, self.failed_attempts
+                    return True, [(current, rotation, col)], self.failed_attempts
 
                 elif self.sequence:
-                    self.stack.append((current, rotation, col))
                     next_tetromino = self.sequence.popleft()
-                    result, stack, attempts = self.solve(next_tetromino)
+                    result, moves, attempts = self.solve(next_tetromino)
                     if result:
-                        return True, stack, attempts
+                        return True, [(current, rotation, col)] + moves, attempts
                     self.sequence.appendleft(next_tetromino)
-                    self.stack.pop()
                     self.lines_cleared = current_iteration_lines_cleared
                     self.board = np.copy(boardcopy)
 
-                else:
-                    self.board = np.copy(boardcopy)
-                    self.lines_cleared = current_iteration_lines_cleared
-                    self.failed_attempts += 1
+                self.board = np.copy(boardcopy)
+                self.lines_cleared = current_iteration_lines_cleared
+                self.failed_attempts += 1
 
-                if(rotation == len(current) - 1 and col == self.width - len(shape[rotation][0])):
-                    self.failed_attempts += 1
-                    self.board = np.copy(boardcopy)
-                    self.lines_cleared = current_iteration_lines_cleared
-
-        return False, self.stack, self.failed_attempts
+        return False, [], self.failed_attempts
 
     def visualize_moves(self, stack):
         self.reset()

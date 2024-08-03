@@ -7,6 +7,7 @@ class TetrisVisualization {
         this.board = [];
         this.currentMove = -1;
         this.moves = [];
+        this.initialBoard = [];
 
         this.svg = this.container.append('svg')
             .attr('width', this.width * this.cellSize)
@@ -14,7 +15,8 @@ class TetrisVisualization {
     }
 
     setBoard(board) {
-        this.board = board;
+        this.initialBoard = JSON.parse(JSON.stringify(board));
+        this.board = JSON.parse(JSON.stringify(board));
         this.drawBoard();
     }
 
@@ -49,7 +51,10 @@ class TetrisVisualization {
 
     previousMove() {
         if (this.currentMove > -1) {
-            this.undoMove(this.moves[this.currentMove]);
+            this.board = JSON.parse(JSON.stringify(this.initialBoard));
+            for (let i = 0; i <= this.currentMove - 1; i++) {
+                this.applyMove(this.moves[i]);
+            }
             this.currentMove--;
             this.drawBoard();
         }
@@ -66,20 +71,17 @@ class TetrisVisualization {
         this.clearLines();
     }
 
-    undoMove(move) {
-        // For simplicity, we'll just revert to the initial board state
-        // and replay all moves up to the current one
-        this.board = this.moves[0].slice();
-        for (let i = 0; i < this.currentMove; i++) {
-            this.applyMove(this.moves[i + 1]);
-        }
-    }
-
     getTetromino(tetromino, rotation) {
-        // Implement this method to return the correct tetromino shape
-        // based on the tetromino type and rotation
-        // This is a placeholder implementation
-        return [[1, 1], [1, 1]];
+        const shapes = {
+            'I': [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
+            'J': [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
+            'L': [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
+            'O': [[[1, 1], [1, 1]]],
+            'S': [[[0, 1, 1], [1, 1, 0]], [[1, 0], [1, 1], [0, 1]]],
+            'T': [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
+            'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
+        };
+        return shapes[tetromino][rotation % shapes[tetromino].length];
     }
 
     canPlaceTetromino(shape, row, col) {
@@ -106,12 +108,10 @@ class TetrisVisualization {
     }
 
     clearLines() {
-        let linesCleared = 0;
         for (let r = this.height - 1; r >= 0; r--) {
             if (this.board[r].every(cell => cell === 1)) {
                 this.board.splice(r, 1);
                 this.board.unshift(new Array(this.width).fill(0));
-                linesCleared++;
             }
         }
     }
