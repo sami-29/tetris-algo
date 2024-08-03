@@ -162,17 +162,81 @@
         }
 
         .form-container {
-            width: 45%;
+            width: 30%;
         }
 
         .results-container {
+            width: 65%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        #tetris-board {
             width: 45%;
         }
 
-        @media (max-width: 768px) {
+        .game-info {
+            width: 50%;
+        }
+
+        .controls {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .controls button {
+            margin-right: 10px;
+        }
+
+        #sequence-display {
+            width: 100%;
+            margin-top: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 10px 0;
+        }
+
+        .tetromino-preview {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin-right: 5px;
+            border: 1px solid #0f0;
+            text-align: center;
+            line-height: 30px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
             .form-container, .results-container {
                 width: 100%;
             }
+            #tetris-board, .game-info {
+                width: 100%;
+            }
+        }
+
+        .btn {
+            background-color: #006600;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #008000;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -282,14 +346,16 @@
                 const resultsDiv = d3.select('#single-game-results');
                 resultsDiv.html('');
 
-                resultsDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
-                resultsDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-
                 // Create a container for the Tetris board
                 const boardContainer = resultsDiv.append('div')
-                    .attr('id', 'tetris-board')
-                    .style('width', '300px')
-                    .style('height', '600px');
+                    .attr('id', 'tetris-board');
+
+                // Create a container for game info
+                const gameInfo = resultsDiv.append('div')
+                    .attr('class', 'game-info');
+
+                gameInfo.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
+                gameInfo.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
@@ -303,16 +369,19 @@
 
                 controls.append('button')
                     .attr('id', 'prev-move-btn')
+                    .attr('class', 'btn')
                     .text('Previous Move')
                     .on('click', () => tetrisVis.previousMove());
 
                 controls.append('button')
                     .attr('id', 'play-pause-btn')
+                    .attr('class', 'btn')
                     .text('Play')
                     .on('click', () => tetrisVis.togglePlayPause());
 
                 controls.append('button')
                     .attr('id', 'next-move-btn')
+                    .attr('class', 'btn')
                     .text('Next Move')
                     .on('click', () => tetrisVis.nextMove());
 
