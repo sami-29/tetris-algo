@@ -72,7 +72,7 @@ class TetrisGameGenerator:
         while True:
             tetromino = np.random.choice(self.tetrominoes_names)
             rotation = np.random.randint(0, len(self.tetromino_shapes[tetromino]))
-            shape = self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation)
+            shape = np.array(self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation))
             col_to_try = np.random.randint(0, self.width - shape.shape[1] + 1)
             if self.is_valid_move(shape, 0, col_to_try):
                 placement_height = self.calculate_placement_height(shape, col_to_try)
