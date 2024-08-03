@@ -4,6 +4,36 @@ from time import time
 import multiprocessing
 import csv
 
+def minimize_max_attempts(attempts):
+    size = len(attempts)
+    best_max_attempts = 0
+    best_efficiency_ratio = 0
+    memo = {}
+
+    for i in range(size):
+        current_attempt_key = tuple(attempts[i].items())
+        if current_attempt_key in memo or not attempts[i]["solvable"]:
+            continue
+
+        memo[current_attempt_key] = True
+
+        max_attempts = attempts[i]["failed_attempts"] + 1
+        solved = 0
+        loop = max_attempts * size
+
+        for j in range(max_attempts * size):
+            current_attempt = j // size + 1
+            isSolvable = True if attempts[j % size]["solvable"] and attempts[j % size]["failed_attempts"] + 1 == current_attempt else False
+            solved += 1 if isSolvable else 0
+            loop -= max_attempts - current_attempt if isSolvable else 0
+
+        efficiency_ratio = solved / loop
+        if efficiency_ratio > best_efficiency_ratio:
+            best_efficiency_ratio = efficiency_ratio
+            best_max_attempts = max_attempts
+
+    return best_max_attempts
+
 def solve_game(args):
     game, max_moves, test = args
     solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_moves)
@@ -37,33 +67,34 @@ if __name__ == "__main__":
     initial_height_max = 4
     start = 0
     end = 100
-    max_attempts = 10000
     # =====================
 
     start_loop = time()
 
-    # start_minimization = time()
+    # Preliminary phase to find optimal max_attempts
+    test_games_to_generate = 20
+    test_max_attempts = 20000
 
-    # with multiprocessing.Pool(processes=num_processes) as pool:
-    #     games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(0, test_games_to_generate)])
+    print("Starting preliminary phase to find optimal max_attempts...")
+    start_minimization = time()
 
-    # start_minimization = time()
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        test_games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(test_games_to_generate)])
 
-    # with multiprocessing.Pool(processes=num_processes) as pool:
-    #     attempts = pool.map(solve_game, [(game, max_attempts, True) for game in games])
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        test_attempts = pool.map(solve_game, [(game, test_max_attempts, True) for game in test_games])
 
-    # max_attempts = minimize_max_attempts(attempts)
-    # print(f"Best max_attempts: {max_attempts}")
-    # print(f"Time to minimize max_attempts: {time() - start_minimization}")
+    max_attempts = minimize_max_attempts(test_attempts)
+    print(f"Optimal max_attempts found: {max_attempts}")
+    print(f"Time to find optimal max_attempts: {time() - start_minimization}")
 
-
+    # Main phase
     start_game_generation = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
-        games += pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(start, end)])
+        games = pool.map(generate_game, [(i, goal, tetrominoes, initial_height_max) for i in range(start, end)])
 
     end_game_generation = time()
     print(f"Time to generate games: {end_game_generation - start_game_generation}")
-
 
     start_game_solving = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
