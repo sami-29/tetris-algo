@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class TetrisGameGenerator:
-    tetromino_shapes: Dict[str, List[List[List[int]]]] = {
+    tetromino_shapes = {
         'I': [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
         'J': [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
         'L': [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
@@ -107,16 +107,11 @@ class TetrisGameGenerator:
     def visualize_board(self) -> str:
         return '\n'.join([' '.join(map(str, row)) for row in self.board])
 
-    def place_tetromino(self, tetromino: str, rotation: int, col: int) -> None:
-        shape = self.rotate_tetromino(self.tetromino_shapes[tetromino][0], rotation)
-        rows, cols = len(shape), len(shape[0])
-        row = 0
-        while row + rows <= self.height and not any(shape[r][c] == 1 and self.board[row+r][col+c] == 1 for r in range(rows) for c in range(cols)):
-            row += 1
-        row -= 1
+    def place_tetromino(self, tetromino: List[List[int]], row: int, col: int) -> None:
+        rows, cols = len(tetromino), len(tetromino[0])
         for r in range(rows):
             for c in range(cols):
-                if shape[r][c] == 1:
+                if tetromino[r][c] == 1:
                     self.board[row+r][col+c] = 1
         self.clear_lines()
 
