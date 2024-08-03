@@ -25,16 +25,12 @@
             padding: 20px;
             background-color: #001a00;
             box-shadow: 0 0 10px #0f0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
         }
 
         h1, h2 {
             color: #0f0;
             text-align: center;
             text-shadow: 2px 2px #003300;
-            width: 100%;
         }
 
         .tab-buttons {
@@ -75,9 +71,10 @@
             border: 2px solid #0f0;
             padding: 5px;
             font-family: 'Courier New', Courier, monospace;
+            width: 60px;
         }
 
-        button[type="submit"] {
+        button[type="submit"], .btn {
             background-color: #006600;
             color: #0f0;
             border: 2px solid #0f0;
@@ -89,7 +86,7 @@
             margin-top: 10px;
         }
 
-        button[type="submit"]:hover {
+        button[type="submit"]:hover, .btn:hover {
             background-color: #008000;
             box-shadow: 0 0 10px #0f0;
         }
@@ -109,13 +106,10 @@
             padding: 20px;
             margin-top: 20px;
             background-color: #001a00;
-            width: 100%;
         }
 
         .active {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+            display: block;
         }
 
         #tetris-board {
@@ -129,7 +123,6 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 20px;
-            width: 100%;
         }
 
         .speed-control {
@@ -146,55 +139,8 @@
             padding: 10px;
             border: 1px solid #0f0;
             background-color: #001a00;
-            width: 100%;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-
-        .tetromino-preview {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-right: 5px;
-            border: 1px solid #0f0;
-            text-align: center;
-            line-height: 20px;
-        }
-
-        .form-container {
-            width: 30%;
-        }
-
-        .results-container {
-            width: 65%;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        #tetris-board {
-            width: 45%;
-        }
-
-        .game-info {
-            width: 50%;
-        }
-
-        .controls {
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .controls button {
-            margin-right: 10px;
-        }
-
-        #sequence-display {
-            width: 100%;
-            margin-top: 20px;
-            overflow-x: auto;
-            white-space: nowrap;
-            padding: 10px 0;
+            height: 300px;
+            overflow-y: auto;
         }
 
         .tetromino-preview {
@@ -202,36 +148,43 @@
             width: 30px;
             height: 30px;
             margin-right: 5px;
+            margin-bottom: 5px;
             border: 1px solid #0f0;
             text-align: center;
             line-height: 30px;
             font-size: 14px;
         }
 
-        @media (max-width: 1200px) {
-            .form-container, .results-container {
-                width: 100%;
+        .form-container {
+            margin-bottom: 20px;
+        }
+
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        #tetris-board {
+            width: 300px;
+            height: 600px;
+        }
+
+        .game-info {
+            width: calc(100% - 320px);
+        }
+
+        .controls button {
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                flex-direction: column;
             }
             #tetris-board, .game-info {
                 width: 100%;
             }
-        }
-
-        .btn {
-            background-color: #006600;
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            background-color: #008000;
-            box-shadow: 0 0 10px #0f0;
         }
 
         .btn:disabled {
@@ -298,6 +251,10 @@
                     </div>
                     <button type="submit">Run Single Game</button>
                 </form>
+            </div>
+            <div id="sequence-display">
+                <h3>Tetromino Sequence:</h3>
+                <div></div>
             </div>
             <div class="results-container" id="single-game-results"></div>
         </div>
@@ -401,12 +358,9 @@
                         tetrisVis.setAnimationSpeed(speed);
                     });
 
-                // Add sequence display
-                const sequenceDisplay = resultsDiv.append('div')
-                    .attr('id', 'sequence-display');
-                sequenceDisplay.append('h3').text('Tetromino Sequence:');
-                const sequenceContainer = sequenceDisplay.append('div');
-
+                // Update sequence display
+                const sequenceContainer = d3.select('#sequence-display').select('div');
+                sequenceContainer.html(''); // Clear existing content
                 data.sequence.forEach((tetromino, index) => {
                     sequenceContainer.append('span')
                         .attr('class', 'tetromino-preview')
@@ -415,6 +369,7 @@
                 });
 
                 tetrisVis.updateControlButtons();
+                d3.select('#sequence-display').style('display', 'block');
             }
         });
 
