@@ -8,16 +8,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def solve_game(args):
-    game, max_moves, test = args
+    game, max_moves = args
     solver = TetrisSolver(game.board, game.sequence, game.goal, max_attempts=max_moves)
-
     result, moves, failed_attempts = solver.solve()
-    if test:
-        return {
-            "solvable": result,
-            "failed_attempts": failed_attempts
-        }
-
     return game if result else None
 
 def generate_game(args):
@@ -39,7 +32,7 @@ def run_game_generation_and_solving(start, end, goal, tetrominoes, initial_heigh
 
     start_game_solving = time()
     with multiprocessing.Pool(processes=num_processes) as pool:
-        winnable_games = pool.map(solve_game, [(game, max_attempts, False) for game in games])
+        winnable_games = pool.map(solve_game, [(game, max_attempts) for game in games])
     winnable_games = [game for game in winnable_games if game is not None]
     end_game_solving = time()
     logging.info(f"Time to solve games: {end_game_solving - start_game_solving:.2f} seconds")
