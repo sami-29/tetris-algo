@@ -37,7 +37,7 @@ if __name__ == "__main__":
     initial_height_max = 4
     start = 0
     end = 100
-    max_attempts = 1000
+    max_attempts = 10000
     # =====================
 
     start_loop = time()
