@@ -217,6 +217,17 @@
     <script>
         let tetrisVis;
 
+        function setTab(newTab) {
+            this.tab = newTab;
+            updateURL();
+        }
+
+        function updateURL() {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', this.tab);
+            window.history.pushState({}, '', url);
+        }
+
         htmx.on("htmx:afterSwap", function (event) {
             if (event.detail.target.id === "simulation-results") {
                 const data = JSON.parse(event.detail.xhr.response);
