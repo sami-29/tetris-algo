@@ -361,19 +361,25 @@
             if (newTab === 'single-game' && tetrisVis) {
                 tetrisVis.reset();
             }
+            // Force Alpine to update the UI
+            Alpine.nextTick(() => {
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.style.display = el.id === `${newTab}-tab` ? 'block' : 'none';
+                });
+            });
         }
 
         function updateURL(tab) {
             const url = new URL(window.location);
             url.searchParams.set('tab', tab);
-            window.history.pushState({}, '', url);
+            window.history.pushState({tab}, '', url);
         }
 
         function loadTabFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
             if (tabParam && (tabParam === 'simulation' || tabParam === 'single-game')) {
-                Alpine.store('tab', tabParam);
+                setTab(tabParam);
             }
         }
 
@@ -381,7 +387,13 @@
         window.addEventListener('load', loadTabFromURL);
 
         // Handle browser back/forward navigation
-        window.addEventListener('popstate', loadTabFromURL);
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.tab) {
+                setTab(event.state.tab);
+            } else {
+                loadTabFromURL();
+            }
+        });
 
         htmx.on("htmx:afterSwap", function (event) {
             if (event.detail.target.id === "simulation-results") {
@@ -394,8 +406,6 @@
                 resultsDiv.append('p').text(`Average attempts: ${data.average_attempts.toFixed(2)}`);
             } else if (event.detail.target.id === "single-game-results") {
                 const data = JSON.parse(event.detail.xhr.response);
-                const gameInfoDiv = d3.select('#game-info');
-                gameInfoDiv.html('');
                 // Clear previous game data
                 d3.select('#tetris-board').html('');
                 d3.select('#sequence-display').select('div').html('');
