@@ -346,6 +346,9 @@
         function setTab(newTab) {
             Alpine.store('tab', newTab);
             updateURL(newTab);
+            if (newTab === 'single-game' && tetrisVis) {
+                tetrisVis.reset();
+            }
         }
 
         function updateURL(tab) {

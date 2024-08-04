@@ -74,9 +74,10 @@ class TetrisSolver:
 
     def clear_lines(self):
         full_rows = np.all(self.board, axis=1)
-        self.lines_cleared += np.sum(full_rows)
+        lines_cleared = np.sum(full_rows)
+        self.lines_cleared += lines_cleared
 
-        self.board = np.vstack([np.zeros((np.sum(full_rows), self.width), dtype=int), self.board[~full_rows]])
+        self.board = np.vstack([np.zeros((lines_cleared, self.width), dtype=int), self.board[~full_rows]])
 
     def visualize(self, board=None):
         if board is None:

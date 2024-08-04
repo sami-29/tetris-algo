@@ -204,13 +204,29 @@ class TetrisVisualization {
     }
 
     togglePlayPause() {
-        this.isPlaying = !this.isPlaying;
-        if (this.isPlaying) {
-            this.playAnimation();
+        if (this.currentMove >= this.moves.length - 1) {
+            this.reset();
         } else {
-            clearInterval(this.animationInterval);
+            this.isPlaying = !this.isPlaying;
+            if (this.isPlaying) {
+                this.playAnimation();
+            } else {
+                clearInterval(this.animationInterval);
+            }
         }
         this.updateControlButtons();
+    }
+
+    reset() {
+        this.currentMove = -1;
+        this.board = JSON.parse(JSON.stringify(this.initialBoard));
+        this.linesCleared = 0;
+        this.isPlaying = false;
+        clearInterval(this.animationInterval);
+        this.drawBoard();
+        this.updateSequenceDisplay();
+        this.updateControlButtons();
+        this.updateGameInfo();
     }
 
     playAnimation() {
