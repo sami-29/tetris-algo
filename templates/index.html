@@ -179,7 +179,7 @@
 
 
         .controls {
-            display: flex;
+            display: none;
             justify-content: space-between;
             align-items: center;
         }
@@ -396,14 +396,11 @@
                 const data = JSON.parse(event.detail.xhr.response);
                 const gameInfoDiv = d3.select('#game-info');
                 gameInfoDiv.html('');
-                gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
-                gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-                gameInfoDiv.append('p').attr('id', 'lines-cleared').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
-                // Remove any additional JSON data
-                d3.select('#single-game-results').html('');
-
-                // Clear the existing board
+                // Clear previous game data
                 d3.select('#tetris-board').html('');
+                d3.select('#sequence-display').select('div').html('');
+                d3.select('#game-info').html('');
+                d3.select('#single-game-results').html('');
 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
@@ -412,9 +409,14 @@
                 tetrisVis.setSequence(data.sequence);
                 tetrisVis.setGoal(parseInt(data.goal));
 
+                // Update game info
+                const gameInfoDiv = d3.select('#game-info');
+                gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
+                gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
+                gameInfoDiv.append('p').attr('id', 'lines-cleared').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
+
                 // Update sequence display
                 const sequenceContainer = d3.select('#sequence-display').select('div');
-                sequenceContainer.html(''); // Clear existing content
                 data.sequence.forEach((tetromino, index) => {
                     sequenceContainer.append('span')
                         .attr('class', 'tetromino-preview')
@@ -423,27 +425,34 @@
                 });
 
                 // Set up control buttons
-                d3.select('#prev-move-btn').on('click', () => tetrisVis.previousMove());
-                d3.select('#play-pause-btn').on('click', () => tetrisVis.togglePlayPause());
-                d3.select('#next-move-btn').on('click', () => tetrisVis.nextMove());
-                d3.select('#speed-slider').on('input', function () {
-                    const speed = this.value;
-                    tetrisVis.setAnimationSpeed(speed);
-                    updateSliderBackground(this);
-                });
+                setupControlButtons();
 
-                // Initialize slider background
-                updateSliderBackground(document.getElementById('speed-slider'));
-
-                function updateSliderBackground(slider) {
-                    const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
-                    slider.style.background = `linear-gradient(to right, #0f0 0%, #0f0 ${value}%, #001a00 ${value}%, #001a00 100%)`;
-                }
-
-                tetrisVis.updateControlButtons();
+                // Show controls and sequence display
+                d3.select('.controls').style('display', 'flex');
                 d3.select('#sequence-display').style('display', 'block');
             }
         });
+
+        function setupControlButtons() {
+            d3.select('#prev-move-btn').on('click', () => tetrisVis.previousMove());
+            d3.select('#play-pause-btn').on('click', () => tetrisVis.togglePlayPause());
+            d3.select('#next-move-btn').on('click', () => tetrisVis.nextMove());
+            d3.select('#speed-slider').on('input', function () {
+                const speed = this.value;
+                tetrisVis.setAnimationSpeed(speed);
+                updateSliderBackground(this);
+            });
+
+            // Initialize slider background
+            updateSliderBackground(document.getElementById('speed-slider'));
+
+            tetrisVis.updateControlButtons();
+        }
+
+        function updateSliderBackground(slider) {
+            const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+            slider.style.background = `linear-gradient(to right, #0f0 0%, #0f0 ${value}%, #001a00 ${value}%, #001a00 100%)`;
+        }
 
         // Update initial board when inputs change
         document.querySelectorAll('#seed, #initialHeightMax').forEach(input => {
@@ -473,6 +482,14 @@
                     }
                 });
         }
+
+        // Show loading state when submitting the form
+        document.querySelector('form[hx-post="/run_single_game"]').addEventListener('htmx:beforeRequest', function() {
+            d3.select('#tetris-board').html('');
+            d3.select('#sequence-display').select('div').html('Loading...');
+            d3.select('#game-info').html('Loading...');
+            d3.select('.controls').style('display', 'none');
+        });
     </script>
 </body>
 
