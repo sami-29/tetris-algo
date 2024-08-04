@@ -204,15 +204,14 @@ class TetrisVisualization {
     }
 
     togglePlayPause() {
-        if (this.currentMove >= this.moves.length - 1) {
-            this.reset();
-        } else {
-            this.isPlaying = !this.isPlaying;
-            if (this.isPlaying) {
-                this.playAnimation();
-            } else {
-                clearInterval(this.animationInterval);
+        this.isPlaying = !this.isPlaying;
+        if (this.isPlaying) {
+            if (this.currentMove >= this.moves.length - 1) {
+                this.reset();
             }
+            this.playAnimation();
+        } else {
+            clearInterval(this.animationInterval);
         }
         this.updateControlButtons();
     }

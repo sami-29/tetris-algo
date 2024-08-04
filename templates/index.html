@@ -120,7 +120,8 @@
             border: 2px solid #0f0;
             margin-top: 20px;
             box-shadow: 0 0 10px #0f0;
-
+            width: 100%;
+            height: auto;
         }
 
         .controls {
@@ -142,7 +143,7 @@
             padding: 10px;
             border: 1px solid #0f0;
             background-color: #001a00;
-            height: 300px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
@@ -193,7 +194,7 @@
             -webkit-appearance: none;
             width: 100px;
             height: 10px;
-            background: #001a00;
+            background: linear-gradient(to right, #0f0 0%, #0f0 50%, #001a00 50%, #001a00 100%);
             outline: none;
             opacity: 0.8;
             transition: opacity .2s;
@@ -212,6 +213,7 @@
             background: #0f0;
             cursor: pointer;
             border-radius: 50%;
+            box-shadow: 0 0 5px #0f0;
         }
 
         #speed-slider::-moz-range-thumb {
@@ -220,6 +222,7 @@
             background: #0f0;
             cursor: pointer;
             border-radius: 50%;
+            box-shadow: 0 0 5px #0f0;
         }
 
         .btn:disabled {
@@ -243,6 +246,18 @@
             .right-column {
                 width: 100%;
             }
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline;
+        }
+        #loader {
+            color: #0f0;
+            text-align: center;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -292,7 +307,7 @@
                 <div class="left-column">
                     <div class="form-container">
                         <form hx-post="/run_single_game" hx-trigger="submit" hx-target="#single-game-results"
-                            hx-swap="innerHTML">
+                            hx-swap="innerHTML" hx-indicator="#loader">
                             <div>
                                 <label for="seed">Seed:</label>
                                 <input type="number" id="seed" name="seed" required value="42">
@@ -320,6 +335,7 @@
                 </div>
                 <div class="right-column">
                     <div id="tetris-board"></div>
+                    <div id="loader" class="htmx-indicator">Loading...</div>
                     <div class="controls">
                         <button id="prev-move-btn" class="btn">Previous Move</button>
                         <button id="play-pause-btn" class="btn">Play</button>
@@ -383,6 +399,11 @@
                 gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
                 gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
                 gameInfoDiv.append('p').attr('id', 'lines-cleared').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
+                // Remove any additional JSON data
+                d3.select('#single-game-results').html('');
+
+                // Clear the existing board
+                d3.select('#tetris-board').html('');
 
                 // Initialize the Tetris board visualization
                 tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
