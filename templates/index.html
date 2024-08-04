@@ -251,9 +251,11 @@
         .htmx-indicator {
             display: none;
         }
+
         .htmx-request .htmx-indicator {
             display: inline;
         }
+
         #loader {
             color: #0f0;
             text-align: center;
@@ -372,7 +374,7 @@
         function updateURL(tab) {
             const url = new URL(window.location);
             url.searchParams.set('tab', tab);
-            window.history.pushState({tab}, '', url);
+            window.history.pushState({ tab }, '', url);
         }
 
         function loadTabFromURL() {
@@ -494,7 +496,7 @@
         }
 
         // Show loading state when submitting the form
-        document.querySelector('form[hx-post="/run_single_game"]').addEventListener('htmx:beforeRequest', function() {
+        document.querySelector('form[hx-post="/run_single_game"]').addEventListener('htmx:beforeRequest', function () {
             d3.select('#tetris-board').html('');
             d3.select('#sequence-display').select('div').html('Loading...');
             d3.select('#game-info').html('Loading...');
