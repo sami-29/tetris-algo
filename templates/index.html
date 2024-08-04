@@ -194,7 +194,7 @@
             -webkit-appearance: none;
             width: 100px;
             height: 10px;
-            background: linear-gradient(to right, #0f0 0%, #0f0 50%, #001a00 50%, #001a00 100%);
+            background: #001a00;
             outline: none;
             opacity: 0.8;
             transition: opacity .2s;
@@ -429,7 +429,16 @@
                 d3.select('#speed-slider').on('input', function () {
                     const speed = this.value;
                     tetrisVis.setAnimationSpeed(speed);
+                    updateSliderBackground(this);
                 });
+
+                // Initialize slider background
+                updateSliderBackground(document.getElementById('speed-slider'));
+
+                function updateSliderBackground(slider) {
+                    const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+                    slider.style.background = `linear-gradient(to right, #0f0 0%, #0f0 ${value}%, #001a00 ${value}%, #001a00 100%)`;
+                }
 
                 tetrisVis.updateControlButtons();
                 d3.select('#sequence-display').style('display', 'block');
