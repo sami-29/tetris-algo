@@ -1,520 +1,236 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Solver</title>
-    <script src="https://unpkg.com/htmx.org@1.8.0"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Prevent FOUC: hide x-cloak elements until Alpine initialises -->
+    <style>[x-cloak]{display:none!important}</style>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+        integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #000;
-            color: #0f0;
-            line-height: 1.6;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            border: 2px solid #0f0;
-            padding: 20px;
-            background-color: #001a00;
-            box-shadow: 0 0 10px #0f0;
-        }
-
-        h1,
-        h2 {
-            color: #0f0;
-            text-align: center;
-            text-shadow: 2px 2px #003300;
-        }
-
-        .tab-buttons {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .tab-button {
-            background-color: #003300;
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-family: 'Courier New', Courier, monospace;
-            transition: all 0.3s ease;
-            margin: 0 5px;
-        }
-
-        .tab-button:hover:not([disabled]) {
-            background-color: #004d00;
-            box-shadow: 0 0 5px #0f0;
-        }
-
-        .tab-button.active {
-            background-color: #006600;
-            box-shadow: 0 0 10px #0f0;
-        }
-
-        .tab-button[disabled] {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        input[type="number"] {
-            background-color: #001a00;
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 5px;
-            font-family: 'Courier New', Courier, monospace;
-            width: 60px;
-        }
-
-        button[type="submit"],
-        .btn {
-            background-color: #006600;
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 8px 8px;
-            min-width: 100px;
-            cursor: pointer;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
-
-        button[type="submit"]:hover,
-        .btn:hover {
-            background-color: #008000;
-            box-shadow: 0 0 10px #0f0;
-        }
-
-        form div {
-            margin-bottom: 10px;
-        }
-
-        label {
-            display: inline-block;
-            width: 150px;
-        }
-
-        .tab-content {
-            display: none;
-            border: 2px solid #0f0;
-            padding: 20px;
-            margin-top: 20px;
-            background-color: #001a00;
-        }
-
-        .active {
-            display: block;
-        }
-
-        #tetris-board {
-            border: 2px solid #0f0;
-            margin-top: 20px;
-            box-shadow: 0 0 10px #0f0;
-            width: 100%;
-            height: auto;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .speed-control {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-        }
-
-
-        #sequence-display {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #0f0;
-            background-color: #001a00;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .tetromino-preview {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            margin-right: 5px;
-            margin-bottom: 5px;
-            border: 1px solid #0f0;
-            text-align: center;
-            line-height: 30px;
-            font-size: 14px;
-        }
-
-        .form-container {
-            margin-bottom: 20px;
-        }
-
-        .single-game-layout {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .left-column {
-            width: 40%;
-        }
-
-        .right-column {
-            width: 55%;
-        }
-
-
-        .controls {
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .speed-control {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-        }
-
-        #speed-slider {
-            -webkit-appearance: none;
-            width: 100px;
-            height: 10px;
-            background: #001a00;
-            outline: none;
-            opacity: 0.8;
-            transition: opacity .2s;
-            border: 1px solid #0f0;
-        }
-
-        #speed-slider:hover {
-            opacity: 1;
-        }
-
-        #speed-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #0f0;
-            cursor: pointer;
-            border-radius: 50%;
-            box-shadow: 0 0 5px #0f0;
-        }
-
-        #speed-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #0f0;
-            cursor: pointer;
-            border-radius: 50%;
-            box-shadow: 0 0 5px #0f0;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #game-info {
-            margin-top: 20px;
-            padding: 10px;
-
-            background-color: #001a00;
-        }
-
-        @media (max-width: 1024px) {
-            .single-game-layout {
-                flex-direction: column;
-            }
-
-            .left-column,
-            .right-column {
-                width: 100%;
-            }
-        }
-
-        .htmx-indicator {
-            display: none;
-        }
-
-        .htmx-request .htmx-indicator {
-            display: inline;
-        }
-
-        #loader {
-            color: #0f0;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body x-data x-init="Alpine.store('tab', 'simulation')">
-    <div class="container">
-        <h1>Tetris Solver</h1>
+<div class="container">
 
-        <div class="tab-buttons">
-            <button @click="setTab('simulation')"
-                :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }">Simulation</button>
-            <button @click="setTab('single-game')"
-                :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }">Single Game</button>
-        </div>
+    <!-- ── Header ──────────────────────────────────────────────────── -->
+    <header class="site-header">
+        <h1 class="site-title">▦ TETRIS SOLVER</h1>
+        <p class="site-subtitle">
+            A backtracking algorithm that finds move sequences to clear Tetris lines.
+            Run simulations across hundreds of seeds or step through a single solved game.
+        </p>
+    </header>
 
-        <div x-show="$store.tab === 'simulation'" class="tab-content"
-            :class="{ 'active': $store.tab === 'simulation' }">
+    <!-- ── Tabs ────────────────────────────────────────────────────── -->
+    <div class="tab-buttons" role="tablist">
+        <button role="tab"
+            :aria-selected="$store.tab === 'simulation'"
+            :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }"
+            @click="setTab('simulation')">
+            Simulation
+        </button>
+        <button role="tab"
+            :aria-selected="$store.tab === 'single-game'"
+            :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }"
+            @click="setTab('single-game')">
+            Single Game
+        </button>
+    </div>
+
+    <!-- ── Simulation Tab ──────────────────────────────────────────── -->
+    <div id="simulation-tab-content"
+        role="tabpanel"
+        x-cloak
+        x-show="$store.tab === 'simulation'"
+        :class="{ 'tab-content': true, 'active': $store.tab === 'simulation' }">
+
+        <div class="section-header">
             <h2>Run Simulation</h2>
-            <div class="form-container">
-                <form hx-post="/run_simulation" hx-trigger="submit" hx-target="#simulation-results" hx-swap="innerHTML">
-                    <div>
-                        <label for="goal">Goal:</label>
-                        <input type="number" id="goal" name="goal" required value="8">
-                    </div>
-                    <div>
-                        <label for="tetrominoes">Tetrominoes:</label>
-                        <input type="number" id="tetrominoes" name="tetrominoes" required value="40">
-                    </div>
-                    <div>
-                        <label for="initialHeightMax">Initial Height Max:</label>
-                        <input type="number" id="initialHeightMax" name="initialHeightMax" required value="7">
-                    </div>
-                    <div>
-                        <label for="numGames">Number of Games:</label>
-                        <input type="number" id="numGames" name="numGames" required value="100">
-                    </div>
-                    <button type="submit">Run Simulation</button>
-                </form>
-            </div>
-            <div class="results-container" id="simulation-results"></div>
         </div>
 
-        <div x-show="$store.tab === 'single-game'" class="tab-content"
-            :class="{ 'active': $store.tab === 'single-game' }">
-            <h2>Run Single Game</h2>
-            <div class="single-game-layout">
-                <div class="left-column">
-                    <div class="form-container">
-                        <form hx-post="/run_single_game" hx-trigger="submit" hx-target="#single-game-results"
-                            hx-swap="innerHTML" hx-indicator="#loader">
-                            <div>
-                                <label for="seed">Seed:</label>
-                                <input type="number" id="seed" name="seed" required value="42">
-                            </div>
-                            <div>
-                                <label for="goal">Goal:</label>
-                                <input type="number" id="goal" name="goal" required value="8">
-                            </div>
-                            <div>
-                                <label for="tetrominoes">Tetrominoes:</label>
-                                <input type="number" id="tetrominoes" name="tetrominoes" required value="40">
-                            </div>
-                            <div>
-                                <label for="initialHeightMax">Initial Height Max:</label>
-                                <input type="number" id="initialHeightMax" name="initialHeightMax" required value="7">
-                            </div>
-                            <button type="submit">Run Single Game</button>
-                        </form>
+        <form hx-post="/run_simulation"
+            hx-trigger="submit"
+            hx-target="#simulation-results"
+            hx-swap="innerHTML">
+
+            <div class="form-section">
+                <h3>Parameters</h3>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="sim-goal">Goal (lines to clear)</label>
+                        <input type="number" id="sim-goal" name="goal"
+                            required value="8" min="1" max="40">
+                        <span class="field-hint">1 – 40</span>
                     </div>
-                    <div id="sequence-display">
-                        <h3>Tetromino Sequence:</h3>
-                        <div>Run a game to see the tetromino sequence</div>
+                    <div class="form-field">
+                        <label for="sim-tetrominoes">Tetrominoes in sequence</label>
+                        <input type="number" id="sim-tetrominoes" name="tetrominoes"
+                            required value="40" min="1" max="200">
+                        <span class="field-hint">1 – 200</span>
                     </div>
-                    <div id="game-info">Run a game to see game information</div>
+                    <div class="form-field">
+                        <label for="sim-initialHeightMax">Initial height max</label>
+                        <input type="number" id="sim-initialHeightMax" name="initialHeightMax"
+                            required value="7" min="1" max="15">
+                        <span class="field-hint">1 – 15 rows</span>
+                    </div>
+                    <div class="form-field">
+                        <label for="numGames">Number of games</label>
+                        <input type="number" id="numGames" name="numGames"
+                            required value="100" min="1" max="1000">
+                        <span class="field-hint">1 – 1000</span>
+                    </div>
                 </div>
-                <div class="right-column">
-                    <div id="tetris-board">
-                        <p style="text-align: center; padding: 20px;">Run a game to see the Tetris board</p>
+            </div>
+
+            <button type="submit" class="submit-btn">Run Simulation</button>
+        </form>
+
+        <!-- Loading indicator -->
+        <div id="simulation-loader" class="loader-overlay">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Running simulation...</div>
+        </div>
+
+        <!-- Results -->
+        <div id="simulation-results"></div>
+    </div>
+
+    <!-- ── Single Game Tab ─────────────────────────────────────────── -->
+    <div id="single-game-tab-content"
+        role="tabpanel"
+        x-cloak
+        x-show="$store.tab === 'single-game'"
+        :class="{ 'tab-content': true, 'active': $store.tab === 'single-game' }">
+
+        <div class="section-header">
+            <h2>Single Game</h2>
+        </div>
+
+        <div class="single-game-layout">
+
+            <!-- Left column: form + info -->
+            <div class="left-column">
+                <form hx-post="/run_single_game"
+                    hx-trigger="submit"
+                    hx-target="#single-game-results"
+                    hx-swap="innerHTML">
+
+                    <div class="form-section">
+                        <h3>Game Parameters</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="seed">Seed</label>
+                                <input type="number" id="seed" name="seed"
+                                    required value="42" min="0">
+                                <span class="field-hint">Deterministic game</span>
+                            </div>
+                            <div class="form-field">
+                                <label for="sg-goal">Goal (lines)</label>
+                                <input type="number" id="sg-goal" name="goal"
+                                    required value="8" min="1" max="40">
+                                <span class="field-hint">1 – 40</span>
+                            </div>
+                            <div class="form-field">
+                                <label for="sg-tetrominoes">Tetrominoes</label>
+                                <input type="number" id="sg-tetrominoes" name="tetrominoes"
+                                    required value="40" min="1" max="200">
+                                <span class="field-hint">1 – 200</span>
+                            </div>
+                            <div class="form-field">
+                                <label for="sg-initialHeightMax">Initial height max</label>
+                                <input type="number" id="sg-initialHeightMax" name="initialHeightMax"
+                                    required value="7" min="1" max="15">
+                                <span class="field-hint">1 – 15 rows</span>
+                            </div>
+                        </div>
                     </div>
-                    <div id="loader" class="htmx-indicator">Loading...</div>
-                    <div class="controls" style="display: none;">
-                        <button id="prev-move-btn" class="btn">Previous Move</button>
-                        <button id="play-pause-btn" class="btn">Play</button>
-                        <button id="next-move-btn" class="btn">Next Move</button>
-                        <div class="speed-control">
-                            <label for="speed-slider">Animation Speed:</label>
-                            <input type="range" id="speed-slider" min="1" max="10" value="5">
+
+                    <button type="submit" class="submit-btn">Solve Game</button>
+                </form>
+
+                <!-- Game Info -->
+                <div id="game-info" style="margin-top:16px;">
+                    <div class="info-row" style="grid-column:1/-1;color:var(--color-text-muted);font-size:0.8rem;">
+                        Run a game to see information
+                    </div>
+                </div>
+
+                <!-- Sequence Display -->
+                <div id="sequence-display" style="margin-top:16px;">
+                    <h3>Tetromino Sequence</h3>
+                    <div class="sequence-items" style="color:var(--color-text-muted);font-size:0.8rem;padding:8px 0;">
+                        Run a game to see the sequence
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right column: board + controls -->
+            <div class="game-panel">
+
+                <!-- Loading indicator -->
+                <div id="single-game-loader" class="loader-overlay">
+                    <div class="loader-spinner"></div>
+                    <div class="loader-text">Solving game...</div>
+                </div>
+
+                <!-- Board -->
+                <div class="board-wrapper">
+                    <div id="tetris-board">
+                        <div class="board-placeholder">
+                            <div class="board-placeholder-icon">▦</div>
+                            <div>Run a game to see the board</div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Controls -->
+                <div class="controls" role="group" aria-label="Playback controls">
+                    <div class="controls-row">
+                        <button id="prev-move-btn" class="btn"
+                            aria-label="Previous move"
+                            title="Previous move (←)">← Prev</button>
+                        <button id="play-pause-btn" class="btn btn-primary"
+                            aria-label="Play or pause"
+                            title="Play / Pause (Space)">Play</button>
+                        <button id="next-move-btn" class="btn"
+                            aria-label="Next move"
+                            title="Next move (→)">Next →</button>
+                        <span id="move-counter" class="move-counter">Move 0 / 0</span>
+                    </div>
+                    <div class="controls-row">
+                        <div class="speed-control">
+                            <span class="speed-label">Speed</span>
+                            <input type="range" id="speed-slider"
+                                min="1" max="10" value="5"
+                                aria-label="Animation speed"
+                                aria-valuemin="1" aria-valuemax="10" aria-valuenow="5">
+                        </div>
+                        <span class="keyboard-hint">
+                            <kbd>←</kbd><kbd>→</kbd> step &nbsp; <kbd>Space</kbd> play/pause
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Single game results (htmx target, hidden) -->
+                <div id="single-game-results"></div>
             </div>
-            <div class="results-container" id="single-game-results"></div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/tetris_visualization.js') }}"></script>
-    <script>
-        let tetrisVis;
+    <!-- ── Footer ──────────────────────────────────────────────────── -->
+    <footer class="site-footer">
+        <p>Tetris Solver &mdash; Backtracking Algorithm Demo &nbsp;|&nbsp; <a href="/how-it-works">How it works</a></p>
+    </footer>
 
-        function setTab(newTab) {
-            Alpine.store('tab', newTab);
-            updateURL(newTab);
-            if (newTab === 'single-game') {
-                if (tetrisVis) {
-                    tetrisVis.reset();
-                }
-                resetPlaceholders();
-            }
-            // Force Alpine to update the UI
-            Alpine.nextTick(() => {
-                document.querySelectorAll('.tab-content').forEach(el => {
-                    el.style.display = el.id === `${newTab}-tab` ? 'block' : 'none';
-                });
-            });
-        }
+</div>
 
-        function updateURL(tab) {
-            const url = new URL(window.location);
-            url.searchParams.set('tab', tab);
-            window.history.pushState({ tab }, '', url);
-        }
-
-        function loadTabFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabParam = urlParams.get('tab');
-            if (tabParam && (tabParam === 'simulation' || tabParam === 'single-game')) {
-                setTab(tabParam);
-            }
-        }
-
-        // Load tab from URL on page load
-        window.addEventListener('load', loadTabFromURL);
-
-        // Handle browser back/forward navigation
-        window.addEventListener('popstate', (event) => {
-            if (event.state && event.state.tab) {
-                setTab(event.state.tab);
-            } else {
-                loadTabFromURL();
-            }
-        });
-
-        htmx.on("htmx:afterSwap", function (event) {
-            if (event.detail.target.id === "simulation-results") {
-                const data = JSON.parse(event.detail.xhr.response);
-                const resultsDiv = d3.select('#simulation-results');
-                resultsDiv.html('');
-                resultsDiv.append('p').text(`Winnable games: ${data.winnable_games}`);
-                resultsDiv.append('p').text(`Total games: ${data.total_games}`);
-                resultsDiv.append('p').text(`Average time: ${data.average_time.toFixed(3)} seconds`);
-                resultsDiv.append('p').text(`Average attempts: ${data.average_attempts.toFixed(2)}`);
-            } else if (event.detail.target.id === "single-game-results") {
-                const data = JSON.parse(event.detail.xhr.response);
-                // Clear previous game data
-                d3.select('#tetris-board').html('');
-                d3.select('#sequence-display').select('div').html('');
-                d3.select('#game-info').html('');
-                d3.select('#single-game-results').html('');
-
-                // Initialize the Tetris board visualization
-                tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
-                tetrisVis.setBoard(data.initialBoard);
-                tetrisVis.setMoves(data.moves);
-                tetrisVis.setSequence(data.sequence);
-                tetrisVis.setGoal(parseInt(data.goal));
-
-                // Update game info
-                const gameInfoDiv = d3.select('#game-info');
-                gameInfoDiv.append('p').text(`Result: ${data.result ? 'Winnable' : 'Not Winnable'}`);
-                gameInfoDiv.append('p').text(`Failed Attempts: ${data.failedAttempts}`);
-                gameInfoDiv.append('p').attr('id', 'lines-cleared').text(`Lines Cleared: 0/${data.goal || 'undefined'}`);
-
-                // Update sequence display
-                const sequenceContainer = d3.select('#sequence-display').select('div');
-                data.sequence.forEach((tetromino, index) => {
-                    sequenceContainer.append('span')
-                        .attr('class', 'tetromino-preview')
-                        .text(tetromino)
-                        .style('background-color', index === 0 ? '#004d00' : 'transparent');
-                });
-
-                // Set up control buttons
-                setupControlButtons();
-
-                // Show controls and sequence display
-                d3.select('.controls').style('display', 'flex');
-                d3.select('#sequence-display').style('display', 'block');
-            }
-        });
-
-        function setupControlButtons() {
-            d3.select('#prev-move-btn').on('click', () => tetrisVis.previousMove());
-            d3.select('#play-pause-btn').on('click', () => tetrisVis.togglePlayPause());
-            d3.select('#next-move-btn').on('click', () => tetrisVis.nextMove());
-            d3.select('#speed-slider').on('input', function () {
-                const speed = this.value;
-                tetrisVis.setAnimationSpeed(speed);
-                updateSliderBackground(this);
-            });
-
-            // Initialize slider background
-            updateSliderBackground(document.getElementById('speed-slider'));
-
-            tetrisVis.updateControlButtons();
-        }
-
-        function resetPlaceholders() {
-            d3.select('#tetris-board').html('<p style="text-align: center; padding: 20px;">Run a game to see the Tetris board</p>');
-            d3.select('#sequence-display').select('div').html('Run a game to see the tetromino sequence');
-            d3.select('#game-info').html('Run a game to see game information');
-            d3.select('.controls').style('display', 'none');
-        }
-
-        function updateSliderBackground(slider) {
-            const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
-            slider.style.background = `linear-gradient(to right, #0f0 0%, #0f0 ${value}%, #001a00 ${value}%, #001a00 100%)`;
-        }
-
-        // Update initial board when inputs change
-        document.querySelectorAll('#seed, #initialHeightMax').forEach(input => {
-            input.addEventListener('change', updateInitialBoard);
-        });
-
-        function updateInitialBoard() {
-            const seed = document.getElementById('seed').value;
-            const initialHeightMax = document.getElementById('initialHeightMax').value;
-            const goal = document.getElementById('goal').value;
-            const tetrominoes = document.getElementById('tetrominoes').value;
-
-            fetch('/generate_initial_board', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ seed, initialHeightMax, goal, tetrominoes }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (tetrisVis) {
-                        tetrisVis.setBoard(data.board);
-                    } else {
-                        tetrisVis = new TetrisVisualization('tetris-board', 10, 20);
-                        tetrisVis.setBoard(data.board);
-                    }
-                });
-        }
-
-        // Show loading state when submitting the form
-        document.querySelector('form[hx-post="/run_single_game"]').addEventListener('htmx:beforeRequest', function () {
-            d3.select('#tetris-board').html('');
-            d3.select('#sequence-display').select('div').html('Loading...');
-            d3.select('#game-info').html('Loading...');
-            d3.select('.controls').style('display', 'none');
-        });
-    </script>
+<script src="{{ url_for('static', filename='js/tetris_visualization.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-
 </html>

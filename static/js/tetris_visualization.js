@@ -1,10 +1,39 @@
+/* =============================================
+   tetris_visualization.js – D3 board renderer
+   ============================================= */
+
+const TETROMINO_SHAPES = {
+    I: [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
+    J: [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
+    L: [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
+    O: [[[1, 1], [1, 1]]],
+    S: [[[0, 1, 1], [1, 1, 0]], [[1, 0], [1, 1], [0, 1]]],
+    T: [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
+    Z: [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]],
+};
+
+// Standard Tetris guideline colors
+const PIECE_COLORS = {
+    I: '#00cfcf',
+    O: '#f0d000',
+    T: '#9a00cf',
+    S: '#00a000',
+    Z: '#d00000',
+    J: '#0050f0',
+    L: '#e06000',
+    empty: '#0d1a0d',
+    falling: '#ff4081',
+};
+
 class TetrisVisualization {
     constructor(containerId, width, height) {
+        this.containerId = containerId;
         this.container = d3.select(`#${containerId}`);
         this.width = width;
         this.height = height;
         this.cellSize = 30;
         this.board = [];
+        this.colorBoard = [];
         this.currentMove = -1;
         this.moves = [];
         this.initialBoard = [];
@@ -15,17 +44,28 @@ class TetrisVisualization {
         this.isAnimating = false;
         this.linesCleared = 0;
         this.goal = 0;
-
-        this.svg = this.container.append('svg')
-            .attr('width', this.width * this.cellSize)
-            .attr('height', this.height * this.cellSize);
-
         this.fallingPiece = null;
+
+        this._initSvg();
     }
+
+    _initSvg() {
+        const vw = this.width * this.cellSize;
+        const vh = this.height * this.cellSize;
+        this.svg = this.container.append('svg')
+            .attr('viewBox', `0 0 ${vw} ${vh}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('width', '100%')
+            .style('height', 'auto')
+            .style('display', 'block');
+    }
+
+    // ── Public setters ───────────────────────────────────────────────────────
 
     setBoard(board) {
         this.initialBoard = JSON.parse(JSON.stringify(board));
         this.board = JSON.parse(JSON.stringify(board));
+        this.colorBoard = board.map(row => row.map(() => null));
         this.drawBoard();
     }
 
@@ -49,37 +89,49 @@ class TetrisVisualization {
         this.animationSpeed = speed;
         if (this.isPlaying) {
             clearInterval(this.animationInterval);
-            this.playAnimation();
+            this._playAnimation();
         }
     }
 
+    // ── Drawing ──────────────────────────────────────────────────────────────
+
     drawBoard() {
-        const cells = this.svg.selectAll('rect')
-            .data(this.board.flat());
+        const flatData = this.board.flat().map((val, i) => {
+            const row = Math.floor(i / this.width);
+            const col = i % this.width;
+            const color = val === 1 ? (this.colorBoard[row]?.[col] || PIECE_COLORS.I) : PIECE_COLORS.empty;
+            return { val, row, col, color };
+        });
+
+        const cells = this.svg.selectAll('rect.cell').data(flatData);
 
         cells.enter()
             .append('rect')
+            .attr('class', 'cell')
             .merge(cells)
-            .attr('x', (d, i) => (i % this.width) * this.cellSize)
-            .attr('y', (d, i) => Math.floor(i / this.width) * this.cellSize)
-            .attr('width', this.cellSize - 1)
-            .attr('height', this.cellSize - 1)
-            .attr('fill', d => d === 1 ? '#4CAF50' : '#2C3E50');
+            .attr('x', d => d.col * this.cellSize + 1)
+            .attr('y', d => d.row * this.cellSize + 1)
+            .attr('width', this.cellSize - 2)
+            .attr('height', this.cellSize - 2)
+            .attr('rx', 2)
+            .attr('fill', d => d.color)
+            .attr('stroke', d => d.val === 1 ? 'rgba(255,255,255,0.15)' : 'rgba(0,255,0,0.04)')
+            .attr('stroke-width', 0.5);
 
         cells.exit().remove();
 
-        if (this.fallingPiece) {
-            this.drawFallingPiece();
-        }
+        if (this.fallingPiece) this._drawFallingPiece();
     }
 
-    drawFallingPiece() {
-        const fallingCells = this.svg.selectAll('.falling-piece')
-            .data(this.fallingPiece.shape.flat().map((value, index) => ({
-                value,
-                x: (this.fallingPiece.col + index % this.fallingPiece.shape[0].length) * this.cellSize,
-                y: (this.fallingPiece.row + Math.floor(index / this.fallingPiece.shape[0].length)) * this.cellSize
-            })));
+    _drawFallingPiece() {
+        const { shape, row, col, pieceType } = this.fallingPiece;
+        const fallData = shape.flat().map((val, i) => ({
+            val,
+            x: (col + (i % shape[0].length)) * this.cellSize + 1,
+            y: (row + Math.floor(i / shape[0].length)) * this.cellSize + 1,
+        }));
+
+        const fallingCells = this.svg.selectAll('rect.falling-piece').data(fallData);
 
         fallingCells.enter()
             .append('rect')
@@ -87,17 +139,23 @@ class TetrisVisualization {
             .merge(fallingCells)
             .attr('x', d => d.x)
             .attr('y', d => d.y)
-            .attr('width', this.cellSize - 1)
-            .attr('height', this.cellSize - 1)
-            .attr('fill', d => d.value === 1 ? '#FF4081' : 'transparent');
+            .attr('width', this.cellSize - 2)
+            .attr('height', this.cellSize - 2)
+            .attr('rx', 2)
+            .attr('fill', d => d.val === 1 ? PIECE_COLORS[pieceType] || PIECE_COLORS.falling : 'transparent')
+            .attr('stroke', d => d.val === 1 ? 'rgba(255,255,255,0.3)' : 'none')
+            .attr('stroke-width', 0.5)
+            .attr('opacity', 0.85);
 
         fallingCells.exit().remove();
     }
 
+    // ── Move navigation ──────────────────────────────────────────────────────
+
     nextMove() {
         if (this.currentMove < this.moves.length - 1 && !this.isAnimating) {
             this.currentMove++;
-            this.animateMove(this.moves[this.currentMove]);
+            this._animateMove(this.moves[this.currentMove]);
             this.updateControlButtons();
         }
     }
@@ -106,9 +164,10 @@ class TetrisVisualization {
         if (this.currentMove > -1 && !this.isAnimating) {
             this.currentMove--;
             this.board = JSON.parse(JSON.stringify(this.initialBoard));
+            this.colorBoard = this.initialBoard.map(row => row.map(() => null));
             this.linesCleared = 0;
             for (let i = 0; i <= this.currentMove; i++) {
-                this.applyMove(this.moves[i]);
+                this._applyMove(this.moves[i]);
             }
             this.drawBoard();
             this.updateSequenceDisplay();
@@ -117,21 +176,21 @@ class TetrisVisualization {
         }
     }
 
-    animateMove(move) {
+    _animateMove(move) {
         this.isAnimating = true;
-        const [tetromino, rotation, col] = move;
-        const shape = this.getTetromino(tetromino, rotation);
-        this.fallingPiece = { shape, row: 0, col };
+        const [pieceType, rotation, col] = move;
+        const shape = TETROMINO_SHAPES[pieceType][rotation % TETROMINO_SHAPES[pieceType].length];
+        this.fallingPiece = { shape, row: 0, col, pieceType };
 
         const dropInterval = setInterval(() => {
-            if (this.canPlaceTetromino(shape, this.fallingPiece.row + 1, this.fallingPiece.col)) {
+            if (this._canPlace(shape, this.fallingPiece.row + 1, col)) {
                 this.fallingPiece.row++;
                 this.drawBoard();
             } else {
                 clearInterval(dropInterval);
-                this.placeTetromino(shape, this.fallingPiece.row, this.fallingPiece.col);
+                this._placePiece(shape, this.fallingPiece.row, col, pieceType);
                 this.fallingPiece = null;
-                this.clearLines();
+                this._clearLines();
                 this.drawBoard();
                 this.updateSequenceDisplay();
                 this.updateGameInfo();
@@ -141,84 +200,90 @@ class TetrisVisualization {
         }, 1000 / (this.animationSpeed * 2));
     }
 
-    applyMove(move) {
-        const [tetromino, rotation, col] = move;
-        const shape = this.getTetromino(tetromino, rotation);
+    _applyMove(move) {
+        const [pieceType, rotation, col] = move;
+        const shape = TETROMINO_SHAPES[pieceType][rotation % TETROMINO_SHAPES[pieceType].length];
         let row = 0;
-        while (this.canPlaceTetromino(shape, row + 1, col)) {
-            row++;
-        }
-        this.placeTetromino(shape, row, col);
-        this.clearLines();
+        while (this._canPlace(shape, row + 1, col)) row++;
+        this._placePiece(shape, row, col, pieceType);
+        this._clearLines();
     }
 
-    getTetromino(tetromino, rotation) {
-        const shapes = {
-            'I': [[[1, 1, 1, 1]], [[1], [1], [1], [1]]],
-            'J': [[[1, 0, 0], [1, 1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 1, 1], [0, 0, 1]], [[0, 1], [0, 1], [1, 1]]],
-            'L': [[[0, 0, 1], [1, 1, 1]], [[1, 0], [1, 0], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1], [0, 1], [0, 1]]],
-            'O': [[[1, 1], [1, 1]]],
-            'S': [[[0, 1, 1], [1, 1, 0]], [[1, 0], [1, 1], [0, 1]]],
-            'T': [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]], [[1, 1, 1], [0, 1, 0]], [[0, 1], [1, 1], [0, 1]]],
-            'Z': [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]]
-        };
-        return shapes[tetromino][rotation % shapes[tetromino].length];
-    }
+    // ── Board logic ──────────────────────────────────────────────────────────
 
-    canPlaceTetromino(shape, row, col) {
-        for (let r =
-
- 0; r < shape.length; r++) {
+    _canPlace(shape, row, col) {
+        for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
-                    if (row + r >= this.height || col + c < 0 || col + c >= this.width || this.board[row + r][col + c] === 1) {
-                        return false;
-                    }
+                    if (
+                        row + r >= this.height ||
+                        col + c < 0 ||
+                        col + c >= this.width ||
+                        this.board[row + r][col + c] === 1
+                    ) return false;
                 }
             }
         }
         return true;
     }
 
-    placeTetromino(shape, row, col) {
+    _placePiece(shape, row, col, pieceType) {
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
                     this.board[row + r][col + c] = 1;
+                    if (this.colorBoard[row + r]) {
+                        this.colorBoard[row + r][col + c] = PIECE_COLORS[pieceType] || PIECE_COLORS.falling;
+                    }
                 }
             }
         }
     }
 
-    clearLines() {
-        let linesCleared = 0;
+    _clearLines() {
+        let cleared = 0;
         for (let r = this.height - 1; r >= 0; r--) {
             if (this.board[r].every(cell => cell === 1)) {
                 this.board.splice(r, 1);
                 this.board.unshift(new Array(this.width).fill(0));
-                linesCleared++;
+                this.colorBoard.splice(r, 1);
+                this.colorBoard.unshift(new Array(this.width).fill(null));
+                cleared++;
+                r++;
             }
         }
-        this.linesCleared += linesCleared;
-        this.updateGameInfo();
+        this.linesCleared += cleared;
+        if (cleared) this.updateGameInfo();
     }
+
+    // ── Playback ─────────────────────────────────────────────────────────────
 
     togglePlayPause() {
         this.isPlaying = !this.isPlaying;
         if (this.isPlaying) {
-            if (this.currentMove >= this.moves.length - 1) {
-                this.reset();
-            }
-            this.playAnimation();
+            if (this.currentMove >= this.moves.length - 1) this.reset();
+            this._playAnimation();
         } else {
             clearInterval(this.animationInterval);
         }
         this.updateControlButtons();
     }
 
+    _playAnimation() {
+        this.animationInterval = setInterval(() => {
+            if (!this.isAnimating) this.nextMove();
+            if (this.currentMove >= this.moves.length - 1) {
+                this.isPlaying = false;
+                clearInterval(this.animationInterval);
+                this.updateControlButtons();
+            }
+        }, 1000 / this.animationSpeed);
+    }
+
     reset() {
         this.currentMove = -1;
         this.board = JSON.parse(JSON.stringify(this.initialBoard));
+        this.colorBoard = this.initialBoard.map(row => row.map(() => null));
         this.linesCleared = 0;
         this.isPlaying = false;
         clearInterval(this.animationInterval);
@@ -228,32 +293,44 @@ class TetrisVisualization {
         this.updateGameInfo();
     }
 
-    playAnimation() {
-        this.animationInterval = setInterval(() => {
-            if (!this.isAnimating) {
-                this.nextMove();
-            }
-            if (this.currentMove >= this.moves.length - 1) {
-                this.togglePlayPause();
-            }
-        }, 1000 / this.animationSpeed);
-    }
+    // ── UI updates ────────────────────────────────────────────────────────────
 
     updateSequenceDisplay() {
-        const sequenceContainer = d3.select('#sequence-display').select('div');
-        sequenceContainer.selectAll('span')
-            .data(this.sequence)
-            .style('background-color', (d, i) => i === this.currentMove + 1 ? '#004d00' : 'transparent');
+        d3.selectAll('.tetromino-chip').each(function (d, i) {
+            const el = d3.select(this);
+            const idx = parseInt(el.attr('data-index'));
+            const current = idx === tetrisVis?.currentMove + 1;
+            const placed = idx <= tetrisVis?.currentMove;
+            el.classed('current', current);
+            el.classed('placed', placed);
+        });
+
+        // Scroll current chip into view
+        const currentChip = document.querySelector('.tetromino-chip.current');
+        if (currentChip) {
+            currentChip.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
     }
 
     updateControlButtons() {
-        const isLastMove = this.currentMove >= this.moves.length - 1;
-        d3.select('#prev-move-btn').attr('disabled', this.currentMove <= -1 || this.isAnimating ? true : null);
-        d3.select('#next-move-btn').attr('disabled', isLastMove || this.isAnimating ? true : null);
-        d3.select('#play-pause-btn').text(isLastMove ? 'Restart' : (this.isPlaying ? 'Pause' : 'Play'));
+        const isLast = this.currentMove >= this.moves.length - 1;
+        const total = this.moves.length;
+
+        d3.select('#prev-move-btn').attr('disabled', (this.currentMove <= -1 || this.isAnimating) ? true : null);
+        d3.select('#next-move-btn').attr('disabled', (isLast || this.isAnimating) ? true : null);
+        d3.select('#play-pause-btn')
+            .text(isLast ? 'Restart' : (this.isPlaying ? 'Pause' : 'Play'))
+            .classed('btn-primary', !isLast);
+
+        const counter = document.getElementById('move-counter');
+        if (counter) {
+            const current = this.currentMove < 0 ? 0 : this.currentMove + 1;
+            counter.textContent = `Move ${current} / ${total}`;
+        }
     }
 
     updateGameInfo() {
-        d3.select('#lines-cleared').text(`Lines Cleared: ${this.linesCleared}/${this.goal}`);
+        const el = document.getElementById('lines-cleared');
+        if (el) el.textContent = `${this.linesCleared} / ${this.goal}`;
     }
 }

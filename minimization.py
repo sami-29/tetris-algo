@@ -46,5 +46,5 @@ if __name__ == "__main__":
         {"solvable": False, "failed_attempts": 1000},
     ]
 
-    result = minimize_max_attempts(example_attempts)
+    result = minimize_max_attempts(example_attempts, goal=8, tetrominoes=40, initial_height_max=7)
     print(f"Best max_attempts: {result}")
