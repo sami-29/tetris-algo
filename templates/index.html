@@ -29,12 +29,16 @@
     <!-- ── Tabs ────────────────────────────────────────────────────── -->
     <div class="tab-buttons" role="tablist">
         <button role="tab"
+            aria-selected="true"
+            class="tab-button active"
             :aria-selected="$store.tab === 'simulation'"
             :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }"
             @click="setTab('simulation')">
             Simulation
         </button>
         <button role="tab"
+            aria-selected="false"
+            class="tab-button"
             :aria-selected="$store.tab === 'single-game'"
             :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }"
             @click="setTab('single-game')">
@@ -45,7 +49,7 @@
     <!-- ── Simulation Tab ──────────────────────────────────────────── -->
     <div id="simulation-tab-content"
         role="tabpanel"
-        x-cloak
+        class="tab-content active"
         x-show="$store.tab === 'simulation'"
         :class="{ 'tab-content': true, 'active': $store.tab === 'simulation' }">
 
@@ -104,7 +108,7 @@
     <!-- ── Single Game Tab ─────────────────────────────────────────── -->
     <div id="single-game-tab-content"
         role="tabpanel"
-        x-cloak
+        class="tab-content"
         x-show="$store.tab === 'single-game'"
         :class="{ 'tab-content': true, 'active': $store.tab === 'single-game' }">
 
@@ -155,14 +159,14 @@
                 </form>
 
                 <!-- Game Info -->
-                <div id="game-info" style="margin-top:16px;">
+                <div id="game-info" style="margin-top:10px;">
                     <div class="info-row" style="grid-column:1/-1;color:var(--color-text-muted);font-size:0.8rem;">
                         Run a game to see information
                     </div>
                 </div>
 
                 <!-- Sequence Display -->
-                <div id="sequence-display" style="margin-top:16px;">
+                <div id="sequence-display" style="margin-top:10px;">
                     <h3>Tetromino Sequence</h3>
                     <div class="sequence-items" style="color:var(--color-text-muted);font-size:0.8rem;padding:8px 0;">
                         Run a game to see the sequence

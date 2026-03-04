@@ -1,2 +1,5 @@
-/__pycache__
+__pycache__/
+*.pyc
+tetris_solver.db
 winnable_games.csv
+log.txt

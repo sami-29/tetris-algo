@@ -12,7 +12,6 @@ const TETROMINO_SHAPES = {
     Z: [[[1, 1, 0], [0, 1, 1]], [[0, 1], [1, 1], [1, 0]]],
 };
 
-// Standard Tetris guideline colors
 const PIECE_COLORS = {
     I: '#00cfcf',
     O: '#f0d000',
@@ -22,6 +21,7 @@ const PIECE_COLORS = {
     J: '#0050f0',
     L: '#e06000',
     empty: '#0d1a0d',
+    initial: '#3a4a3a',
     falling: '#ff4081',
 };
 
@@ -34,6 +34,7 @@ class TetrisVisualization {
         this.cellSize = 30;
         this.board = [];
         this.colorBoard = [];
+        this.initialFilled = [];
         this.currentMove = -1;
         this.moves = [];
         this.initialBoard = [];
@@ -65,6 +66,8 @@ class TetrisVisualization {
     setBoard(board) {
         this.initialBoard = JSON.parse(JSON.stringify(board));
         this.board = JSON.parse(JSON.stringify(board));
+        // Track which cells were pre-filled so we can colour them distinctly
+        this.initialFilled = board.map(row => row.map(cell => cell === 1));
         this.colorBoard = board.map(row => row.map(() => null));
         this.drawBoard();
     }
@@ -99,7 +102,10 @@ class TetrisVisualization {
         const flatData = this.board.flat().map((val, i) => {
             const row = Math.floor(i / this.width);
             const col = i % this.width;
-            const color = val === 1 ? (this.colorBoard[row]?.[col] || PIECE_COLORS.I) : PIECE_COLORS.empty;
+            let color = PIECE_COLORS.empty;
+            if (val === 1) {
+                color = this.colorBoard[row]?.[col] || (this.initialFilled[row]?.[col] ? PIECE_COLORS.initial : PIECE_COLORS.I);
+            }
             return { val, row, col, color };
         });
 
@@ -120,7 +126,12 @@ class TetrisVisualization {
 
         cells.exit().remove();
 
-        if (this.fallingPiece) this._drawFallingPiece();
+        // Always sync falling-piece overlay: draw if present, remove if not
+        if (this.fallingPiece) {
+            this._drawFallingPiece();
+        } else {
+            this.svg.selectAll('rect.falling-piece').remove();
+        }
     }
 
     _drawFallingPiece() {
@@ -165,6 +176,7 @@ class TetrisVisualization {
             this.currentMove--;
             this.board = JSON.parse(JSON.stringify(this.initialBoard));
             this.colorBoard = this.initialBoard.map(row => row.map(() => null));
+            this.initialFilled = this.initialBoard.map(row => row.map(cell => cell === 1));
             this.linesCleared = 0;
             for (let i = 0; i <= this.currentMove; i++) {
                 this._applyMove(this.moves[i]);
@@ -190,6 +202,8 @@ class TetrisVisualization {
                 clearInterval(dropInterval);
                 this._placePiece(shape, this.fallingPiece.row, col, pieceType);
                 this.fallingPiece = null;
+                // drawBoard() will call svg.selectAll('rect.falling-piece').remove()
+                // because fallingPiece is now null — ghost rects are cleaned up here
                 this._clearLines();
                 this.drawBoard();
                 this.updateSequenceDisplay();
@@ -235,6 +249,10 @@ class TetrisVisualization {
                     if (this.colorBoard[row + r]) {
                         this.colorBoard[row + r][col + c] = PIECE_COLORS[pieceType] || PIECE_COLORS.falling;
                     }
+                    // Once a solver-placed piece lands, it is no longer "initial"
+                    if (this.initialFilled[row + r]) {
+                        this.initialFilled[row + r][col + c] = false;
+                    }
                 }
             }
         }
@@ -248,8 +266,10 @@ class TetrisVisualization {
                 this.board.unshift(new Array(this.width).fill(0));
                 this.colorBoard.splice(r, 1);
                 this.colorBoard.unshift(new Array(this.width).fill(null));
+                this.initialFilled.splice(r, 1);
+                this.initialFilled.unshift(new Array(this.width).fill(false));
                 cleared++;
-                r++;
+                r++; // re-check the same index after shift
             }
         }
         this.linesCleared += cleared;
@@ -284,9 +304,11 @@ class TetrisVisualization {
         this.currentMove = -1;
         this.board = JSON.parse(JSON.stringify(this.initialBoard));
         this.colorBoard = this.initialBoard.map(row => row.map(() => null));
+        this.initialFilled = this.initialBoard.map(row => row.map(cell => cell === 1));
         this.linesCleared = 0;
         this.isPlaying = false;
         clearInterval(this.animationInterval);
+        this.fallingPiece = null;
         this.drawBoard();
         this.updateSequenceDisplay();
         this.updateControlButtons();
@@ -296,7 +318,7 @@ class TetrisVisualization {
     // ── UI updates ────────────────────────────────────────────────────────────
 
     updateSequenceDisplay() {
-        d3.selectAll('.tetromino-chip').each(function (d, i) {
+        d3.selectAll('.tetromino-chip').each(function () {
             const el = d3.select(this);
             const idx = parseInt(el.attr('data-index'));
             const current = idx === tetrisVis?.currentMove + 1;
@@ -305,7 +327,6 @@ class TetrisVisualization {
             el.classed('placed', placed);
         });
 
-        // Scroll current chip into view
         const currentChip = document.querySelector('.tetromino-chip.current');
         if (currentChip) {
             currentChip.scrollIntoView({ block: 'nearest', behavior: 'smooth' });

@@ -44,7 +44,7 @@ body {
     color: var(--color-text);
     line-height: 1.6;
     margin: 0;
-    padding: 16px;
+    padding: 10px;
     min-height: 100vh;
 }
 
@@ -55,7 +55,7 @@ body {
     max-width: 1280px;
     margin: 0 auto;
     border: 2px solid var(--color-border);
-    padding: 24px;
+    padding: 16px 24px;
     background-color: var(--color-surface);
     box-shadow: var(--glow-lg);
 }
@@ -65,17 +65,17 @@ body {
    ============================================= */
 .site-header {
     text-align: center;
-    margin-bottom: 32px;
-    padding-bottom: 20px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--color-border-dim);
 }
 
 .site-title {
-    font-size: clamp(1.6rem, 5vw, 2.8rem);
+    font-size: clamp(1.4rem, 4vw, 2rem);
     color: var(--color-accent);
     text-shadow: 0 0 20px var(--color-accent), 2px 2px #003300;
     letter-spacing: 0.1em;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
     animation: titlePulse 4s ease-in-out infinite;
 }
 
@@ -86,10 +86,9 @@ body {
 
 .site-subtitle {
     color: var(--color-text-dim);
-    font-size: 0.9rem;
-    margin: 0;
-    max-width: 600px;
+    font-size: 0.82rem;
     margin: 0 auto;
+    max-width: 600px;
 }
 
 /* =============================================
@@ -99,17 +98,17 @@ body {
     display: flex;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 
 .tab-button {
     background-color: var(--color-surface);
     color: var(--color-text);
     border: 2px solid var(--color-border);
-    padding: 10px 24px;
+    padding: 7px 20px;
     cursor: pointer;
     font-family: var(--font-mono);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: 0.05em;
     transition: var(--transition);
     border-radius: var(--radius);
@@ -134,7 +133,7 @@ body {
 .tab-content {
     display: none;
     border: 2px solid var(--color-border);
-    padding: 24px;
+    padding: 16px;
     margin-top: 0;
     background-color: var(--color-surface);
     border-radius: var(--radius);
@@ -148,7 +147,7 @@ body {
    Forms
    ============================================= */
 .form-section {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 
 .form-section h3 {
@@ -156,15 +155,15 @@ body {
     font-size: 0.75rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin: 0 0 16px;
-    padding-bottom: 6px;
+    margin: 0 0 10px;
+    padding-bottom: 4px;
     border-bottom: 1px solid var(--color-border-dim);
 }
 
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
 }
 
 .form-field {
@@ -190,9 +189,9 @@ input[type="number"] {
     color: var(--color-text);
     border: 1px solid var(--color-border-dim);
     border-radius: var(--radius);
-    padding: 8px 10px;
+    padding: 6px 10px;
     font-family: var(--font-mono);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     width: 100%;
     transition: var(--transition);
 }
@@ -211,15 +210,15 @@ input[type="number"]:hover {
     background-color: var(--color-btn);
     color: var(--color-text);
     border: 2px solid var(--color-border);
-    padding: 10px 20px;
+    padding: 8px 20px;
     cursor: pointer;
     font-family: var(--font-mono);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: 0.05em;
     transition: var(--transition);
     border-radius: var(--radius);
     width: 100%;
-    margin-top: 16px;
+    margin-top: 10px;
     text-transform: uppercase;
 }
 
@@ -241,8 +240,8 @@ input[type="number"]:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 32px;
-    gap: 16px;
+    padding: 16px;
+    gap: 10px;
     color: var(--color-text-dim);
 }
 
@@ -370,7 +369,7 @@ input[type="number"]:hover {
 .single-game-layout {
     display: grid;
     grid-template-columns: 1fr 200px;
-    gap: 24px;
+    gap: 16px;
     margin-top: 0;
     align-items: start;
 }
@@ -381,7 +380,7 @@ input[type="number"]:hover {
 .game-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 /* =============================================
@@ -394,10 +393,14 @@ input[type="number"]:hover {
     border-radius: var(--radius);
     overflow: hidden;
     width: 200px;
+    /* Lock to Tetris 1:2 aspect ratio (10 cols × 20 rows) so the
+       wrapper never shifts when the SVG replaces the placeholder */
+    aspect-ratio: 1 / 2;
 }
 
 #tetris-board {
     width: 200px;
+    height: 100%;
     display: block;
     line-height: 0;
 }
@@ -414,14 +417,16 @@ input[type="number"]:hover {
     justify-content: center;
     flex-direction: column;
     gap: 12px;
-    padding: 40px 20px;
+    width: 100%;
+    height: 100%;
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-align: center;
+    padding: 0 12px;
 }
 
 .board-placeholder-icon {
-    font-size: 2rem;
+    font-size: 1.6rem;
     opacity: 0.4;
 }
 
@@ -431,11 +436,11 @@ input[type="number"]:hover {
 .controls {
     display: none;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     background-color: var(--color-surface-2);
     border: 1px solid var(--color-border-dim);
     border-radius: var(--radius);
-    padding: 12px;
+    padding: 8px;
 }
 
 .controls.visible {
@@ -565,10 +570,10 @@ kbd {
     background-color: var(--color-surface-2);
     border: 1px solid var(--color-border-dim);
     border-radius: var(--radius);
-    padding: 12px 16px;
+    padding: 8px 12px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.82rem;
 }
 
@@ -605,11 +610,11 @@ kbd {
     background-color: var(--color-surface-2);
     border: 1px solid var(--color-border-dim);
     border-radius: var(--radius);
-    padding: 12px;
+    padding: 8px 12px;
 }
 
 #sequence-display h3 {
-    margin: 0 0 10px;
+    margin: 0 0 6px;
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -620,7 +625,7 @@ kbd {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    max-height: 180px;
+    max-height: 140px;
     overflow-y: auto;
 }
 
@@ -722,8 +727,8 @@ kbd {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--color-border-dim);
 }
 
@@ -739,8 +744,8 @@ kbd {
    Footer
    ============================================= */
 .site-footer {
-    margin-top: 32px;
-    padding-top: 16px;
+    margin-top: 14px;
+    padding-top: 10px;
     border-top: 1px solid var(--color-border-dim);
     text-align: center;
     color: var(--color-text-muted);

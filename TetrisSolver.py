@@ -1,143 +1,133 @@
+"""
+TetrisSolver.py – Adaptive beam search Tetris solver.
+
+Uses a progressive widening strategy: attempt a narrow beam first (fast),
+then retry with progressively wider beams if needed. This gives near-instant
+results on easy games while still solving hard ones that a narrow beam misses.
+
+Public API:
+    solver = TetrisSolver(board, sequence, goal)
+    result, moves, evaluations = solver.solve()
+"""
+
+from __future__ import annotations
+
 import numpy as np
-from collections import deque
-from tetris_board import TetrisBoard
+from dataclasses import dataclass, field
+
 from tetromino_data import TETROMINO_SHAPES
+import tetris_engine as engine
+
+# Beam widths to try in order. The solver runs a full search at each width
+# and returns immediately on success. Only moves to the next width on failure.
+_BEAM_SCHEDULE = (1, 5, 20, 100)
 
 
-class TetrisSolver(TetrisBoard):
-    def __init__(self, board, sequence, goal, max_attempts=100000):
-        height, width = np.array(board).shape
-        super().__init__(height, width)
-        self.board = np.array(board)
-        self.initial_board = np.array(board)
-        self.sequence = deque(sequence)
-        self.lines_cleared = 0
-        self.failed_attempts = 0
+@dataclass
+class _State:
+    score: float
+    lines_cleared: int
+    board: np.ndarray
+    moves: list[tuple[str, int, int]]
+
+
+class TetrisSolver:
+    """Progressive beam-search solver for the Tetris line-clearing problem.
+
+    Parameters
+    ----------
+    board : array-like
+        20×10 initial board (0 = empty, 1 = filled).
+    sequence : list[str]
+        Ordered list of tetromino names to place.
+    goal : int
+        Number of lines to clear to win.
+    beam_schedule : tuple[int, ...]
+        Sequence of beam widths to attempt in order.
+        Narrower widths are tried first for speed; wider widths are used
+        as fallback when the narrow search fails.
+    max_attempts : int
+        Kept for API compatibility; unused.
+    """
+
+    def __init__(
+        self,
+        board: list | np.ndarray,
+        sequence: list[str],
+        goal: int,
+        beam_schedule: tuple[int, ...] = _BEAM_SCHEDULE,
+        max_attempts: int = 100_000,
+    ) -> None:
+        self.initial_board = np.array(board, dtype=np.uint8)
+        self.sequence = list(sequence)
         self.goal = goal
-        self.max_attempts = max_attempts
+        self.beam_schedule = beam_schedule
 
-    def reset(self):
-        self.board = np.copy(self.initial_board)
-        self.lines_cleared = 0
-        self.failed_attempts = 0
+    def solve(self) -> tuple[bool, list[tuple[str, int, int]], int]:
+        """Run progressive beam search.
 
-    def clear_lines(self) -> int:
-        full_rows = np.all(self.board, axis=1)
-        lines_cleared = int(np.sum(full_rows))
-        if lines_cleared:
-            self.board = np.vstack([
-                np.zeros((lines_cleared, self.width), dtype=int),
-                self.board[~full_rows],
-            ])
-            self.lines_cleared += lines_cleared
-        return lines_cleared
+        Returns
+        -------
+        success : bool
+        moves : list of (piece_name, rotation_index, column) tuples
+        evaluations : int
+            Total board positions evaluated across all attempts.
+        """
+        total_evals = 0
+        for width in self.beam_schedule:
+            success, moves, evals = self._beam_search(width)
+            total_evals += evals
+            if success:
+                return True, moves, total_evals
+        return False, [], total_evals
 
-    def place_tetromino(self, tetromino, row: int, col: int):
-        shape = np.array(tetromino)
-        rows, cols = shape.shape
-        while row + rows <= self.height and not np.any(
-            self.board[row:row + rows, col:col + cols] + shape > 1
-        ):
-            row += 1
-        np.add(
-            self.board[row - 1:row - 1 + rows, col:col + cols],
-            shape,
-            out=self.board[row - 1:row - 1 + rows, col:col + cols],
-        )
-        self.clear_lines()
+    def _beam_search(self, beam_width: int) -> tuple[bool, list[tuple[str, int, int]], int]:
+        """Single beam search pass at the given width."""
+        evaluations = 0
+        beam: list[_State] = [_State(
+            score=engine.evaluate(self.initial_board),
+            lines_cleared=0,
+            board=self.initial_board.copy(),
+            moves=[],
+        )]
 
-    def is_game_over(self) -> bool:
-        return bool(np.any(self.board[0] == 1))
+        for piece_name in self.sequence:
+            rotations = TETROMINO_SHAPES[piece_name]
+            candidates: list[_State] = []
 
-    def _evaluate_columns(self, tetromino):
-        """Return at most one best column for the given tetromino rotation, sorted by placement height.
-        Skip if the board's top row is already occupied (game effectively over)."""
-        if np.any(self.board[0] == 1):
-            return []
-        columns = list(range(self.width - len(tetromino[0]) + 1))
-        columns.sort(key=lambda col: -self.calculate_placement_height(tetromino, col))
-        return columns[:1]
+            for state in beam:
+                for rot_idx, shape in enumerate(rotations):
+                    for col in engine.get_valid_columns(state.board, shape):
+                        evaluations += 1
 
-    def visualize(self, board=None) -> str:
-        if board is None:
-            board = self.board
-        return '\n'.join([' '.join(map(str, row)) for row in board])
+                        landing_row = engine.drop_row(state.board, shape, col)
+                        if landing_row < 0:
+                            continue
 
-    def solve(self, current=None):
-        current = current if current else self.sequence.popleft()
-        shape = TETROMINO_SHAPES[current]
+                        new_board = state.board.copy()
+                        engine.place_piece(new_board, shape, landing_row, col)
+                        new_board, lines_this_move = engine.clear_lines(new_board)
 
-        for rotation in range(len(shape)):
-            for col in self._evaluate_columns(shape[rotation]):
-                if self.failed_attempts >= self.max_attempts:
-                    return False, [], self.failed_attempts
+                        new_lines = state.lines_cleared + lines_this_move
+                        new_moves = state.moves + [(piece_name, rot_idx, col)]
 
-                board_snapshot = np.copy(self.board)
-                lines_snapshot = self.lines_cleared
+                        if new_lines >= self.goal:
+                            return True, new_moves, evaluations
 
-                if not self.is_valid_move(shape[rotation], 0, col):
-                    self.failed_attempts += 1
-                    continue
+                        candidates.append(_State(
+                            score=engine.evaluate(new_board),
+                            lines_cleared=new_lines,
+                            board=new_board,
+                            moves=new_moves,
+                        ))
 
-                self.place_tetromino(shape[rotation], 0, col)
+            if not candidates:
+                return False, [], evaluations
 
-                if self.is_game_over():
-                    self.board = board_snapshot
-                    self.lines_cleared = lines_snapshot
-                    self.failed_attempts += 1
-                    continue
+            if len(candidates) > beam_width:
+                candidates.sort(key=lambda s: s.score, reverse=True)
+                candidates = candidates[:beam_width]
 
-                if self.lines_cleared >= self.goal:
-                    return True, [(current, rotation, col)], self.failed_attempts
+            beam = candidates
 
-                if self.sequence:
-                    next_piece = self.sequence.popleft()
-                    result, moves, attempts = self.solve(next_piece)
-                    if result:
-                        return True, [(current, rotation, col)] + moves, attempts
-                    self.sequence.appendleft(next_piece)
-
-                self.board = board_snapshot
-                self.lines_cleared = lines_snapshot
-                self.failed_attempts += 1
-
-        return False, [], self.failed_attempts
-
-    def visualize_moves(self, stack):
-        self.reset()
-        for tetromino, rotation, col in stack:
-            initial_lines = self.lines_cleared
-            self.place_tetromino(TETROMINO_SHAPES[tetromino][rotation], 0, col)
-            print(f"Tetromino: {tetromino}  Rotation: {rotation}  Column: {col}")
-            print(f"Lines cleared: {self.lines_cleared - initial_lines}")
-            print(self.visualize())
-            print()
-
-
-if __name__ == '__main__':
-    from time import time
-    from TetrisGameGenerator import TetrisGameGenerator
-    import cProfile
-
-    seed, goal, tetrominoes, initial_height_max = 1, 10, 40, 14
-
-    game = TetrisGameGenerator(seed=seed, goal=goal, tetrominoes=tetrominoes, initial_height_max=initial_height_max)
-    solver = TetrisSolver(game.board, game.sequence, goal)
-
-    print(solver.visualize())
-
-    profiler = cProfile.Profile()
-    profiler.enable()
-    start = time()
-    result, stack, failed_attempts = solver.solve()
-    end = time()
-    profiler.disable()
-    profiler.print_stats(sort='cumulative')
-
-    print(f'Time taken: {end - start:.3f}s')
-    print(f'Result: {result}')
-    print(f'Stack: {stack}')
-    print(f'Failed attempts: {failed_attempts}')
-    print(f'Lines cleared: {solver.lines_cleared}')
-
-    solver.visualize_moves(stack)
+        return False, [], evaluations

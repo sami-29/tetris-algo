@@ -264,7 +264,7 @@ function resetPlaceholders() {
     d3.select('#tetris-board').html(
         '<div class="board-placeholder">' +
         '<div class="board-placeholder-icon">▦</div>' +
-        '<div>Run a game to see the Tetris board</div>' +
+        '<div>Run a game </div>' +
         '</div>'
     );
     d3.select('#sequence-display').html(
