@@ -3,6 +3,9 @@ tetris_engine.py – Pure functions that implement Tetris board mechanics.
 
 All functions operate on a numpy uint8 array of shape (height, width).
 0 = empty, 1 = filled. No mutable class state; callers manage board copies.
+
+All hot-path functions (column_heights, count_holes, evaluate) are fully
+vectorised — no Python-level loops — so they run at C speed on any hardware.
 """
 
 import numpy as np
@@ -22,12 +25,13 @@ def empty_board(height: int = BOARD_HEIGHT, width: int = BOARD_WIDTH) -> np.ndar
 
 
 def drop_row(board: np.ndarray, shape: np.ndarray, col: int) -> int:
-    """Return the highest row index at which `shape` can legally rest in `col`.
+    """Return the row index at which `shape` comes to rest in `col`.
 
-    The piece starts at row 0 and slides down until it would collide or exit
-    the board. Returns the last valid row (0-indexed from the top).
+    Slides the piece down from row 0 until it would collide or exit.
+    Returns the last valid row (0-indexed from top), or -1 if it cannot
+    even be placed at row 0.
     """
-    h, w = board.shape
+    h, _ = board.shape
     rows, cols = shape.shape
     row = 0
     while row + rows <= h:
@@ -76,30 +80,26 @@ def get_valid_columns(board: np.ndarray, shape: np.ndarray) -> list[int]:
 
 
 def column_heights(board: np.ndarray) -> np.ndarray:
-    """Return the filled height of each column (number of occupied cells from bottom)."""
-    h, w = board.shape
-    heights = np.zeros(w, dtype=np.int32)
-    for c in range(w):
-        col = board[:, c]
-        filled = np.where(col == 1)[0]
-        if filled.size:
-            heights[c] = h - filled[0]
-    return heights
+    """Return the filled height of each column — fully vectorised.
+
+    Uses argmax to find the first filled row per column in O(1) NumPy ops
+    instead of a Python loop over each column.
+    """
+    any_filled = board.any(axis=0)                      # (width,) bool
+    first_filled = (board != 0).argmax(axis=0)          # row index of first block
+    h = board.shape[0]
+    return np.where(any_filled, h - first_filled, 0).astype(np.int32)
 
 
 def count_holes(board: np.ndarray) -> int:
-    """Count empty cells that have at least one filled cell above them."""
-    holes = 0
-    _, w = board.shape
-    for c in range(w):
-        col = board[:, c]
-        filled_above = False
-        for cell in col:
-            if cell == 1:
-                filled_above = True
-            elif filled_above:
-                holes += 1
-    return holes
+    """Count empty cells that have at least one filled cell above them — vectorised.
+
+    A cumulative sum along axis=0 turns any cell below the first filled cell
+    in its column positive. Holes are those cells that are positive in that
+    mask but empty in the board.
+    """
+    filled_from_top = np.cumsum(board, axis=0) > 0     # True for cells at/below first block
+    return int(np.sum(filled_from_top & (board == 0)))
 
 
 def bumpiness(heights: np.ndarray) -> int:
@@ -115,16 +115,16 @@ def count_complete_lines(board: np.ndarray) -> int:
 def evaluate(board: np.ndarray) -> float:
     """Score a board state. Higher is better.
 
+    All four sub-computations are vectorised NumPy operations — no Python loops.
     Weights encourage: clearing lines, low stack height, few holes, flat surface.
     """
     heights = column_heights(board)
-    lines = count_complete_lines(board)
+    lines = int(np.sum(np.all(board, axis=1)))
     holes = count_holes(board)
-    bump = bumpiness(heights)
-    agg_height = int(heights.sum())
+    bump = int(np.sum(np.abs(np.diff(heights))))
     return (
         _W_LINES * lines
-        + _W_HEIGHT * agg_height
+        + _W_HEIGHT * int(heights.sum())
         + _W_HOLES * holes
         + _W_BUMPINESS * bump
     )
