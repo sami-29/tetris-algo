@@ -14,7 +14,7 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
-<body x-data x-init="Alpine.store('tab', 'simulation')">
+<body x-data x-init="Alpine.store('tab', 'single-game')">
 <div class="container">
 
     <!-- ── Header ──────────────────────────────────────────────────── -->
@@ -29,16 +29,16 @@
     <!-- ── Tabs ────────────────────────────────────────────────────── -->
     <div class="tab-buttons" role="tablist">
         <button role="tab"
-            aria-selected="true"
-            class="tab-button active"
+            aria-selected="false"
+            class="tab-button"
             :aria-selected="$store.tab === 'simulation'"
             :class="{ 'tab-button': true, 'active': $store.tab === 'simulation' }"
             @click="setTab('simulation')">
             Simulation
         </button>
         <button role="tab"
-            aria-selected="false"
-            class="tab-button"
+            aria-selected="true"
+            class="tab-button active"
             :aria-selected="$store.tab === 'single-game'"
             :class="{ 'tab-button': true, 'active': $store.tab === 'single-game' }"
             @click="setTab('single-game')">
@@ -49,7 +49,7 @@
     <!-- ── Simulation Tab ──────────────────────────────────────────── -->
     <div id="simulation-tab-content"
         role="tabpanel"
-        class="tab-content active"
+        class="tab-content"
         x-show="$store.tab === 'simulation'"
         :class="{ 'tab-content': true, 'active': $store.tab === 'simulation' }">
 
@@ -86,7 +86,7 @@
                     <div class="form-field">
                         <label for="numGames">Number of games</label>
                         <input type="number" id="numGames" name="numGames"
-                            required value="100" min="1" max="1000">
+                            required value="10" min="1" max="100">
                         <span class="field-hint">1 – 1000</span>
                     </div>
                 </div>
@@ -108,7 +108,7 @@
     <!-- ── Single Game Tab ─────────────────────────────────────────── -->
     <div id="single-game-tab-content"
         role="tabpanel"
-        class="tab-content"
+        class="tab-content active"
         x-show="$store.tab === 'single-game'"
         :class="{ 'tab-content': true, 'active': $store.tab === 'single-game' }">
 
